@@ -24,8 +24,8 @@ const SupportDashboard = () => {
     }, []);
 
     const filteredOrders = orders.filter(o =>
-        o.id.includes(searchTerm) ||
-        o.users?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        (o.id && o.id.includes(searchTerm)) ||
+        (o.users?.email && o.users.email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -78,16 +78,16 @@ const SupportDashboard = () => {
                                 <tr><td colSpan={5} className="px-6 py-8 text-center text-zinc-500">No orders found.</td></tr>
                             ) : (
                                 filteredOrders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                                    <tr key={order.id || Math.random()} className="hover:bg-white/5 transition-colors">
                                         <td className="px-6 py-4 font-mono text-sm text-zinc-400">
-                                            #{order.short_id || order.id.slice(0, 8)}
+                                            #{order.short_id || (order.id ? order.id.slice(0, 8) : '???')}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-white">{order.users?.full_name || 'Guest'}</div>
-                                            <div className="text-sm text-zinc-500">{order.users?.email}</div>
+                                            <div className="text-sm text-zinc-500">{order.users?.email || 'No Email'}</div>
                                         </td>
                                         <td className="px-6 py-4 text-white font-medium">
-                                            ${order.total_amount}
+                                            ${order.total_amount || '0.00'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${order.status === 'completed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
@@ -96,11 +96,11 @@ const SupportDashboard = () => {
                                                 }`}>
                                                 {order.status === 'completed' && <CheckCircle size={10} />}
                                                 {order.status === 'pending' && <XCircle size={10} />}
-                                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                <span className="capitalize">{order.status || 'Unknown'}</span>
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-zinc-500 text-sm">
-                                            {new Date(order.created_at).toLocaleDateString()}
+                                            {order.created_at ? new Date(order.created_at).toLocaleDateString() : '-'}
                                         </td>
                                     </tr>
                                 ))

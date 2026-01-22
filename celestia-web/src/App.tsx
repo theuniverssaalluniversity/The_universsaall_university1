@@ -19,6 +19,14 @@ import CreateCoursePage from './pages/dashboard/CreateCoursePage';
 import LearnPage from './pages/LearnPage';
 import TestUserSeeder from './components/dev/TestUserSeeder';
 
+// New Support & Instructor Pages
+import SupportOrders from './pages/dashboard/support/SupportOrders';
+import SupportEnrollments from './pages/dashboard/support/SupportEnrollments';
+import SupportChat from './pages/dashboard/support/SupportChat';
+import InstructorCourses from './pages/dashboard/instructor/InstructorCourses';
+import InstructorStudents from './pages/dashboard/instructor/InstructorStudents';
+import InstructorEarnings from './pages/dashboard/instructor/InstructorEarnings';
+
 function App() {
   return (
     <ConfigProvider>
@@ -53,6 +61,9 @@ function App() {
             <Route path="/instructor" element={<DashboardLayout role="instructor" />}>
               <Route index element={<InstructorDashboard />} />
               <Route path="create-course" element={<CreateCoursePage />} />
+              <Route path="courses" element={<InstructorCourses />} />
+              <Route path="students" element={<InstructorStudents />} />
+              <Route path="earnings" element={<InstructorEarnings />} />
             </Route>
           </Route>
 
@@ -65,8 +76,15 @@ function App() {
               <Route path="revenue" element={<AdminRevenue />} />
             </Route>
 
+          </Route>
+
+          {/* Support */}
+          <Route element={<RoleGuard allowedRoles={['support', 'admin']} />}>
             <Route path="/support" element={<DashboardLayout role="support" />}>
               <Route index element={<SupportDashboard />} />
+              <Route path="orders" element={<SupportOrders />} />
+              <Route path="enrollments" element={<SupportEnrollments />} />
+              <Route path="chat" element={<SupportChat />} />
             </Route>
           </Route>
 
