@@ -32,6 +32,68 @@ const SupportEnrollments = () => {
         }
     };
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [courses, setCourses] = useState<any[]>([]);
+    const [manualEmail, setManualEmail] = useState('');
+    const [selectedCourseId, setSelectedCourseId] = useState('');
+    const [enrollLoading, setEnrollLoading] = useState(false);
+
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const fetchCourses = async () => {
+        const { data } = await supabase.from('courses').select('id, title').eq('status', 'published').order('title');
+        if (data) setCourses(data);
+    };
+
+    const handleManualEnroll = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setEnrollLoading(true);
+
+        try {
+            // 1. Find User by Email
+            const { data: users, error: userError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', manualEmail.trim())
+                .single();
+
+            if (userError || !users) {
+                alert('User not found with this email.');
+                setEnrollLoading(false);
+                return;
+            }
+
+            // 2. Create Enrollment
+            const { error: enrollError } = await supabase
+                .from('enrollments')
+                .insert({
+                    user_id: users.id,
+                    course_id: selectedCourseId
+                });
+
+            if (enrollError) {
+                if (enrollError.code === '23505') { // Unique violation
+                    alert('User is already enrolled in this course.');
+                } else {
+                    alert('Error enrolling user: ' + enrollError.message);
+                }
+            } else {
+                alert('User enrolled successfully!');
+                setIsModalOpen(false);
+                setManualEmail('');
+                setSelectedCourseId('');
+                fetchEnrollments();
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Unexpected error occurred.');
+        } finally {
+            setEnrollLoading(false);
+        }
+    };
+
     const filteredEnrollments = enrollments.filter(e =>
         e.users?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.courses?.title?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,8 +103,11 @@ const SupportEnrollments = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-serif text-white">Enrollment Management</h1>
-                <button className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg font-medium hover:bg-primary/90 transition-colors pointer-events-none opacity-50">
-                    <Plus size={18} /> Manual Enroll (Soon)
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                    <Plus size={18} /> Manual Enroll
                 </button>
             </div>
 
@@ -110,6 +175,61 @@ const SupportEnrollments = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Manual Enrollment Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-6 relative shadow-2xl">
+                        <h2 className="text-xl font-bold text-white">Manual Enrollment</h2>
+
+                        <form onSubmit={handleManualEnroll} className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-zinc-400 mb-1">User Email</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={manualEmail}
+                                    onChange={(e) => setManualEmail(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                                    placeholder="student@example.com"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-zinc-400 mb-1">Select Course</label>
+                                <select
+                                    required
+                                    value={selectedCourseId}
+                                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                                >
+                                    <option value="">-- Choose a Course --</option>
+                                    {courses.map(c => (
+                                        <option key={c.id} value={c.id}>{c.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={enrollLoading}
+                                    className="flex-1 bg-primary text-black py-2.5 rounded-lg font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                >
+                                    {enrollLoading ? 'Enrolling...' : 'Enroll User'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-6 py-2.5 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

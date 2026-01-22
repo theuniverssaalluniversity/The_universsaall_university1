@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { Link } from 'react-router-dom';
-import { Plus, Eye, Trash2 } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2 } from 'lucide-react';
 
 const InstructorCourses = () => {
     const [courses, setCourses] = useState<any[]>([]);
@@ -55,8 +55,12 @@ const InstructorCourses = () => {
                             <div className="aspect-video bg-zinc-800 relative">
                                 <img src={course.thumbnail_url} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <Link to={`/courses/${course.slug}`} className="p-2 bg-white text-black rounded-full hover:bg-primary transition-colors">
-                                        <Eye size={20} />
+                                    <Link
+                                        to={`/instructor/courses/${course.id}/edit`}
+                                        className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        title="Edit Content"
+                                    >
+                                        <Eye size={18} />
                                     </Link>
                                     <button onClick={() => handleDelete(course.id)} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
                                         <Trash2 size={20} />

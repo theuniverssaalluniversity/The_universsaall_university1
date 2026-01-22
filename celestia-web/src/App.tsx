@@ -24,8 +24,10 @@ import SupportOrders from './pages/dashboard/support/SupportOrders';
 import SupportEnrollments from './pages/dashboard/support/SupportEnrollments';
 import SupportChat from './pages/dashboard/support/SupportChat';
 import InstructorCourses from './pages/dashboard/instructor/InstructorCourses';
+import AdminCoupons from './pages/dashboard/AdminCoupons';
 import InstructorStudents from './pages/dashboard/instructor/InstructorStudents';
 import InstructorEarnings from './pages/dashboard/instructor/InstructorEarnings';
+import EditCourseContent from './pages/dashboard/instructor/EditCourseContent';
 
 function App() {
   return (
@@ -61,6 +63,7 @@ function App() {
             <Route path="/instructor" element={<DashboardLayout role="instructor" />}>
               <Route index element={<InstructorDashboard />} />
               <Route path="create-course" element={<CreateCoursePage />} />
+              <Route path="courses/:courseId/edit" element={<EditCourseContent />} />
               <Route path="courses" element={<InstructorCourses />} />
               <Route path="students" element={<InstructorStudents />} />
               <Route path="earnings" element={<InstructorEarnings />} />
@@ -74,6 +77,7 @@ function App() {
               <Route path="settings" element={<AdminSettings />} />
               <Route path="staff" element={<AdminStaff />} />
               <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="coupons" element={<AdminCoupons />} />
             </Route>
 
           </Route>

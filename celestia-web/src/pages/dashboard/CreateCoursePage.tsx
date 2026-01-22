@@ -28,8 +28,8 @@ const CreateCoursePage = () => {
         }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (status: 'draft' | 'published') => {
+        // e.preventDefault() is not needed as these are type="button" now, or we can keep it if we pass logic differently
         setLoading(true);
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -49,7 +49,7 @@ const CreateCoursePage = () => {
                 thumbnail_url: formData.thumbnail_url,
                 slug: formData.slug + '-' + Math.floor(Math.random() * 1000), // Ensure uniqueness
                 instructor_id: user.id,
-                status: 'published' // Auto-publish for now to "make it work" immediately
+                status: status
             });
 
         if (error) {
@@ -141,13 +141,22 @@ const CreateCoursePage = () => {
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t border-white/5 flex justify-end">
+                    <div className="pt-4 border-t border-white/5 flex flex-col md:flex-row gap-4 justify-end">
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={() => handleSubmit('draft')}
                             disabled={loading}
-                            className="px-6 py-2 bg-primary text-black rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
+                            className="px-6 py-2 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition-colors border border-white/10"
                         >
-                            {loading ? 'Creating...' : <><Save size={18} /> Publish Course</>}
+                            Save as Draft
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSubmit('published')}
+                            disabled={loading}
+                            className="px-6 py-2 bg-primary text-black rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center gap-2 justify-center"
+                        >
+                            {loading ? 'Processing...' : <><Save size={18} /> Publish Course</>}
                         </button>
                     </div>
                 </form>
