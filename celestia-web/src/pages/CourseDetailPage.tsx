@@ -10,6 +10,9 @@ interface CourseDetail {
     description: string;
     thumbnail_url: string;
     price: number;
+    duration?: string;
+    certificate?: boolean;
+    community_access?: boolean;
 }
 
 const CourseDetailPage = () => {
@@ -19,6 +22,7 @@ const CourseDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [enrolled, setEnrolled] = useState(false);
     const [enrolling, setEnrolling] = useState(false);
+    const [modules, setModules] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -47,6 +51,15 @@ const CourseDetailPage = () => {
 
                     if (enrollment) setEnrolled(true);
                 }
+
+                // Fetch modules for syllabus preview
+                const { data: modulesData } = await supabase
+                    .from('modules')
+                    .select('id, title, sort_order')
+                    .eq('course_id', courseData.id)
+                    .order('sort_order');
+
+                if (modulesData) setModules(modulesData);
             }
             setLoading(false);
         };
@@ -148,28 +161,31 @@ const CourseDetailPage = () => {
                     <section>
                         <h2 className="text-2xl font-serif text-white mb-6">About this Course</h2>
                         <div className="prose prose-invert text-zinc-400 leading-relaxed max-w-none">
-                            {course.description}
+                            {course.description || "No description provided."}
                         </div>
                     </section>
 
                     <section>
                         <h2 className="text-2xl font-serif text-white mb-6">Syllabus Preview</h2>
                         <div className="space-y-4">
-                            {/* Assuming existing mock logic or future module fetching */}
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-primary">
-                                            <PlayCircle size={20} />
+                            {modules.length === 0 ? (
+                                <p className="text-zinc-500 italic">Curriculum coming soon.</p>
+                            ) : (
+                                modules.map((m, i) => (
+                                    <div key={m.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-primary">
+                                                <PlayCircle size={20} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-white font-medium">Module {i + 1}: {m.title}</h4>
+                                                {/* We don't have lesson count easily unless we fetch it. For now, hiding manual count. */}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="text-white font-medium">Module {i}: Foundations of The Stars</h4>
-                                            <p className="text-sm text-zinc-500">2 Lessons • 45 mins</p>
-                                        </div>
+                                        <Lock size={16} className="text-zinc-600" />
                                     </div>
-                                    <Lock size={16} className="text-zinc-600" />
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
                     </section>
                 </div>
@@ -179,9 +195,16 @@ const CourseDetailPage = () => {
                     <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 sticky top-24 backdrop-blur-xl">
                         <h3 className="text-xl font-serif text-white mb-6">Features</h3>
                         <ul className="space-y-4 text-zinc-400">
-                            <li className="flex items-center gap-3"><PlayCircle size={18} className="text-primary" /> 12 Hours of Video</li>
-                            <li className="flex items-center gap-3"><Users size={18} className="text-primary" /> Community Access</li>
-                            <li className="flex items-center gap-3"><Star size={18} className="text-primary" /> Certificate of Completion</li>
+                            {course.duration && (
+                                <li className="flex items-center gap-3"><Clock size={18} className="text-primary" /> {course.duration}</li>
+                            )}
+                            {course.community_access && (
+                                <li className="flex items-center gap-3"><Users size={18} className="text-primary" /> Community Access</li>
+                            )}
+                            {course.certificate && (
+                                <li className="flex items-center gap-3"><Star size={18} className="text-primary" /> Certificate of Completion</li>
+                            )}
+                            <li className="flex items-center gap-3"><PlayCircle size={18} className="text-primary" /> Lifetime Access</li>
                         </ul>
                     </div>
                 </div>

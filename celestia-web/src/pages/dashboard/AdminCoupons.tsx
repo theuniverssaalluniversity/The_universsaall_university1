@@ -62,7 +62,7 @@ const AdminCoupons = () => {
         try {
             const { error } = await supabase.from('coupons').insert({
                 code: formData.code.toUpperCase(),
-                discount_type: 'percent', // Compulsory percentage as per requirements
+                discount_type: 'percent', // Matched with DB constraint
                 discount_value: Number(formData.discount_value),
                 valid_until: formData.valid_until || null,
                 max_uses: formData.max_uses ? Number(formData.max_uses) : null,

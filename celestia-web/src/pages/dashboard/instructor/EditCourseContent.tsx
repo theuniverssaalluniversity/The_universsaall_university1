@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../utils/supabase'; // Correct import path
-import { Plus, Trash2, Save, Video, FileText, File, Radio, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Save, Video, FileText, File, Radio, ChevronDown, ChevronRight, ArrowLeft, Settings } from 'lucide-react';
 
 // Types for our data
 type Course = {
@@ -45,6 +45,13 @@ const EditCourseContent = () => {
     const [editingLesson, setEditingLesson] = useState<Partial<Lesson> | null>(null);
     const [activeModuleId, setActiveModuleId] = useState<string | null>(null); // For adding new lesson
 
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [courseSettings, setCourseSettings] = useState({
+        duration: '',
+        certificate: true,
+        community_access: true
+    });
+
     useEffect(() => {
         if (courseId) fetchCourseData();
     }, [courseId]);
@@ -56,7 +63,7 @@ const EditCourseContent = () => {
         // 1. Fetch Course Info
         const { data: courseData, error: courseError } = await supabase
             .from('courses')
-            .select('id, title, status')
+            .select('*')
             .eq('id', courseId)
             .single();
 
@@ -65,6 +72,11 @@ const EditCourseContent = () => {
             return;
         }
         setCourse(courseData);
+        setCourseSettings({
+            duration: courseData.duration || '',
+            certificate: courseData.certificate ?? true,
+            community_access: courseData.community_access ?? true
+        });
 
         // 2. Fetch Modules
         const { data: modulesData, error: modulesError } = await supabase
@@ -99,6 +111,25 @@ const EditCourseContent = () => {
 
         setModules(combinedModules);
         setLoading(false);
+    };
+
+    const handleSaveSettings = async () => {
+        const { error } = await supabase
+            .from('courses')
+            .update({
+                duration: courseSettings.duration,
+                certificate: courseSettings.certificate,
+                community_access: courseSettings.community_access
+            })
+            .eq('id', courseId);
+
+        if (error) {
+            alert('Error updating settings');
+        } else {
+            alert('Settings updated!');
+            setIsSettingsOpen(false);
+            fetchCourseData();
+        }
     };
 
     const handleCreateModule = async () => {
@@ -203,20 +234,51 @@ const EditCourseContent = () => {
         setExpandedModules(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
+    const handlePublishCourse = async () => {
+        if (!confirm('Are you ready to publish this course? It will become visible to students.')) return;
+        const { error } = await supabase
+            .from('courses')
+            .update({ status: 'published' })
+            .eq('id', courseId);
+
+        if (error) {
+            alert('Error publishing course');
+        } else {
+            alert('Course published successfully!');
+            setCourse(prev => prev ? { ...prev, status: 'published' } : null);
+        }
+    };
+
     if (loading) return <div className="p-10 text-center text-zinc-500">Loading course content...</div>;
 
     return (
         <div className="p-8 max-w-5xl mx-auto space-y-8">
-            <div className="flex items-center gap-4">
-                <button onClick={() => navigate('/instructor/courses')} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-                    <ArrowLeft size={20} />
-                </button>
-                <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-                        {course?.title}
-                    </h1>
-                    <p className="text-zinc-500">Content & Curriculum</p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => navigate('/instructor/courses')} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+                                {course?.title}
+                            </h1>
+                            <span className={`px-2 py-0.5 text-xs rounded-full border ${course?.status === 'published' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
+                                {course?.status?.toUpperCase()}
+                            </span>
+                        </div>
+                        <p className="text-zinc-500">Content & Curriculum</p>
+                    </div>
                 </div>
+
+                {course?.status === 'draft' && (
+                    <button
+                        onClick={handlePublishCourse}
+                        className="px-6 py-2 bg-primary text-black rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
+                    >
+                        <Save size={18} /> Publish Course
+                    </button>
+                )}
             </div>
 
             {/* Modules List */}
@@ -341,8 +403,8 @@ const EditCourseContent = () => {
                                             key={type}
                                             onClick={() => setEditingLesson({ ...editingLesson, content_type: type as any })}
                                             className={`py-2 px-1 rounded-lg text-sm border transition-all ${editingLesson.content_type === type
-                                                    ? 'bg-primary text-black border-primary font-bold'
-                                                    : 'bg-black/30 text-zinc-400 border-transparent hover:bg-white/5'
+                                                ? 'bg-primary text-black border-primary font-bold'
+                                                : 'bg-black/30 text-zinc-400 border-transparent hover:bg-white/5'
                                                 }`}
                                         >
                                             {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -420,8 +482,70 @@ const EditCourseContent = () => {
                         </div>
                     </div>
                 </div>
-            )}
+                </div>
+    )
+}
+
+{/* Course Settings Modal */ }
+{
+    isSettingsOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg space-y-6 relative shadow-2xl">
+                <h2 className="text-xl font-bold text-white">Course Settings</h2>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm text-zinc-400 mb-1">Duration (e.g. "12 Hours")</label>
+                        <input
+                            type="text"
+                            value={courseSettings.duration || ''}
+                            onChange={(e) => setCourseSettings({ ...courseSettings, duration: e.target.value })}
+                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="certificate"
+                            checked={courseSettings.certificate}
+                            onChange={(e) => setCourseSettings({ ...courseSettings, certificate: e.target.checked })}
+                            className="w-4 h-4 rounded bg-black/50 border-white/10"
+                        />
+                        <label htmlFor="certificate" className="text-sm text-zinc-300">Certificate of Completion</label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="community_access"
+                            checked={courseSettings.community_access}
+                            onChange={(e) => setCourseSettings({ ...courseSettings, community_access: e.target.checked })}
+                            className="w-4 h-4 rounded bg-black/50 border-white/10"
+                        />
+                        <label htmlFor="community_access" className="text-sm text-zinc-300">Community Access</label>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                    <button
+                        onClick={handleSaveSettings}
+                        className="flex-1 bg-primary text-black py-2.5 rounded-lg font-bold hover:bg-primary/90 transition-colors"
+                    >
+                        Save Changes
+                    </button>
+                    <button
+                        onClick={() => setIsSettingsOpen(false)}
+                        className="px-6 py-2.5 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
         </div>
+    )
+}
+        </div >
     );
 };
 

@@ -4,7 +4,7 @@ import { useConfig } from '../context/ConfigContext';
 import { supabase } from '../utils/supabase';
 import {
     LayoutDashboard, BookOpen, Users, ShoppingBag,
-    Settings, LogOut, Menu, X, Bell, Shield, LifeBuoy
+    Settings, LogOut, Menu, X, Bell, LifeBuoy, Tag
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -46,7 +46,9 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         admin: [
             { name: 'Overview', icon: LayoutDashboard, path: '/admin' },
             { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
+            { name: 'Enrollments', icon: BookOpen, path: '/support/enrollments' }, // Added as requested
             { name: 'Revenue', icon: ShoppingBag, path: '/admin/revenue' },
+            { name: 'Coupons', icon: Tag, path: '/admin/coupons' },
             // { name: 'Logs', icon: Shield, path: '/admin/logs' },
             { name: 'Settings', icon: Settings, path: '/admin/settings' },
         ],
