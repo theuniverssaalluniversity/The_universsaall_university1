@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
 import { Search, Shield, User as UserIcon, Check } from 'lucide-react';
-import { UserRole } from '../../types';
+import type { UserRole } from '../../types';
 
 const AdminStaff = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -96,9 +96,9 @@ const AdminStaff = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${user.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                                    user.role === 'instructor' ? 'bg-primary/10 text-primary border-primary/20' :
-                                                        user.role === 'support' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                            'bg-zinc-800 text-zinc-400 border-zinc-700'
+                                                user.role === 'instructor' ? 'bg-primary/10 text-primary border-primary/20' :
+                                                    user.role === 'support' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                        'bg-zinc-800 text-zinc-400 border-zinc-700'
                                                 }`}>
                                                 {user.role === 'admin' && <Shield size={10} />}
                                                 {user.role.charAt(0).toUpperCase() + user.role.slice(1)}

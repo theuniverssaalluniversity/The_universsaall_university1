@@ -15,6 +15,8 @@ import AdminSettings from './pages/dashboard/AdminSettings';
 import AdminStaff from './pages/dashboard/AdminStaff';
 import AdminRevenue from './pages/dashboard/AdminRevenue';
 import SupportDashboard from './pages/dashboard/SupportDashboard';
+import CreateCoursePage from './pages/dashboard/CreateCoursePage';
+import LearnPage from './pages/LearnPage';
 import TestUserSeeder from './components/dev/TestUserSeeder';
 
 function App() {
