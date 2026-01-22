@@ -45,9 +45,9 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         ],
         admin: [
             { name: 'Overview', icon: LayoutDashboard, path: '/admin' },
-            { name: 'Staff', icon: Users, path: '/admin/staff' },
+            { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
             { name: 'Revenue', icon: ShoppingBag, path: '/admin/revenue' },
-            { name: 'Logs', icon: Shield, path: '/admin/logs' },
+            // { name: 'Logs', icon: Shield, path: '/admin/logs' },
             { name: 'Settings', icon: Settings, path: '/admin/settings' },
         ],
         support: [

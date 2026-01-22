@@ -12,8 +12,9 @@ import StudentDashboard from './pages/dashboard/StudentDashboard';
 import InstructorDashboard from './pages/dashboard/InstructorDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import AdminSettings from './pages/dashboard/AdminSettings';
-import CreateCoursePage from './pages/dashboard/CreateCoursePage';
-import LearnPage from './pages/LearnPage';
+import AdminStaff from './pages/dashboard/AdminStaff';
+import AdminRevenue from './pages/dashboard/AdminRevenue';
+import SupportDashboard from './pages/dashboard/SupportDashboard';
 import TestUserSeeder from './components/dev/TestUserSeeder';
 
 function App() {
@@ -58,6 +59,12 @@ function App() {
             <Route path="/admin" element={<DashboardLayout role="admin" />}>
               <Route index element={<AdminDashboard />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="staff" element={<AdminStaff />} />
+              <Route path="revenue" element={<AdminRevenue />} />
+            </Route>
+
+            <Route path="/support" element={<DashboardLayout role="support" />}>
+              <Route index element={<SupportDashboard />} />
             </Route>
           </Route>
 
