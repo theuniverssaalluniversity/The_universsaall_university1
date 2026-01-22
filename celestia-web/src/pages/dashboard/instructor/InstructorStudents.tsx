@@ -23,7 +23,7 @@ const InstructorStudents = () => {
                 .from('enrollments')
                 .select('*, users(full_name, email, avatar_url), courses(title)')
                 .in('course_id', courseIds)
-                .order('enrolled_at', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (data) setStudents(data);
         }
@@ -72,7 +72,7 @@ const InstructorStudents = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-zinc-500 text-sm">
-                                        {new Date(record.enrolled_at).toLocaleDateString()}
+                                        {new Date(record.created_at).toLocaleDateString()}
                                     </td>
                                 </tr>
                             ))

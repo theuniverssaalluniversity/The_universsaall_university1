@@ -16,7 +16,7 @@ const SupportEnrollments = () => {
         const { data, error } = await supabase
             .from('enrollments')
             .select('*, users(email, full_name), courses(title)')
-            .order('enrolled_at', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (data) setEnrollments(data);
         if (error) console.error(error);
@@ -93,7 +93,7 @@ const SupportEnrollments = () => {
                                         <div className="text-xs text-zinc-500 mt-1">{enrollment.progress || 0}% Complete</div>
                                     </td>
                                     <td className="px-6 py-4 text-zinc-500 text-sm">
-                                        {new Date(enrollment.enrolled_at).toLocaleDateString()}
+                                        {new Date(enrollment.created_at).toLocaleDateString()}
                                     </td>
                                     <td className="px-6 py-4">
                                         <button
