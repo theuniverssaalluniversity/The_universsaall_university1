@@ -482,70 +482,66 @@ const EditCourseContent = () => {
                         </div>
                     </div>
                 </div>
-                </div>
-    )
-}
+            )}
 
-{/* Course Settings Modal */ }
-{
-    isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg space-y-6 relative shadow-2xl">
-                <h2 className="text-xl font-bold text-white">Course Settings</h2>
+            {/* Course Settings Modal */}
+            {isSettingsOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg space-y-6 relative shadow-2xl">
+                        <h2 className="text-xl font-bold text-white">Course Settings</h2>
 
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm text-zinc-400 mb-1">Duration (e.g. "12 Hours")</label>
-                        <input
-                            type="text"
-                            value={courseSettings.duration || ''}
-                            onChange={(e) => setCourseSettings({ ...courseSettings, duration: e.target.value })}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
-                        />
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-zinc-400 mb-1">Duration (e.g. "12 Hours")</label>
+                                <input
+                                    type="text"
+                                    value={courseSettings.duration || ''}
+                                    onChange={(e) => setCourseSettings({ ...courseSettings, duration: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="certificate"
+                                    checked={courseSettings.certificate}
+                                    onChange={(e) => setCourseSettings({ ...courseSettings, certificate: e.target.checked })}
+                                    className="w-4 h-4 rounded bg-black/50 border-white/10"
+                                />
+                                <label htmlFor="certificate" className="text-sm text-zinc-300">Certificate of Completion</label>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="community_access"
+                                    checked={courseSettings.community_access}
+                                    onChange={(e) => setCourseSettings({ ...courseSettings, community_access: e.target.checked })}
+                                    className="w-4 h-4 rounded bg-black/50 border-white/10"
+                                />
+                                <label htmlFor="community_access" className="text-sm text-zinc-300">Community Access</label>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button
+                                onClick={handleSaveSettings}
+                                className="flex-1 bg-primary text-black py-2.5 rounded-lg font-bold hover:bg-primary/90 transition-colors"
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                onClick={() => setIsSettingsOpen(false)}
+                                className="px-6 py-2.5 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="certificate"
-                            checked={courseSettings.certificate}
-                            onChange={(e) => setCourseSettings({ ...courseSettings, certificate: e.target.checked })}
-                            className="w-4 h-4 rounded bg-black/50 border-white/10"
-                        />
-                        <label htmlFor="certificate" className="text-sm text-zinc-300">Certificate of Completion</label>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="community_access"
-                            checked={courseSettings.community_access}
-                            onChange={(e) => setCourseSettings({ ...courseSettings, community_access: e.target.checked })}
-                            className="w-4 h-4 rounded bg-black/50 border-white/10"
-                        />
-                        <label htmlFor="community_access" className="text-sm text-zinc-300">Community Access</label>
-                    </div>
                 </div>
-
-                <div className="flex gap-3 pt-4">
-                    <button
-                        onClick={handleSaveSettings}
-                        className="flex-1 bg-primary text-black py-2.5 rounded-lg font-bold hover:bg-primary/90 transition-colors"
-                    >
-                        Save Changes
-                    </button>
-                    <button
-                        onClick={() => setIsSettingsOpen(false)}
-                        className="px-6 py-2.5 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
+            )}
         </div>
-    )
-}
-        </div >
     );
 };
 
