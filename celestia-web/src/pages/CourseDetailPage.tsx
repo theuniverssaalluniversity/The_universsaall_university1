@@ -18,11 +18,21 @@ interface CourseDetail {
 const CourseDetailPage = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const [couponCode, setCouponCode] = useState('');
+    const [discount, setDiscount] = useState<{ amount: number, type: 'percent' | 'fixed' } | null>(null);
+    const [verifyingCoupon, setVerifyingCoupon] = useState(false);
+
     const [course, setCourse] = useState<CourseDetail & { id: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [enrolled, setEnrolled] = useState(false);
     const [enrolling, setEnrolling] = useState(false);
     const [modules, setModules] = useState<any[]>([]);
+
+    const finalPrice = course && discount
+        ? (discount.type === 'percent'
+            ? course.price * (1 - discount.amount / 100)
+            : Math.max(0, course.price - discount.amount))
+        : (course?.price || 0);
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -52,20 +62,55 @@ const CourseDetailPage = () => {
                     if (enrollment) setEnrolled(true);
                 }
 
-                // Fetch modules for syllabus preview
+                // Fetch modules for syllabus preview (including lessons for preview check)
                 const { data: modulesData } = await supabase
                     .from('modules')
-                    .select('id, title, sort_order')
+                    .select('id, title, sort_order, lessons(id, title, is_free_preview, sort_order)')
                     .eq('course_id', courseData.id)
                     .order('sort_order');
 
-                if (modulesData) setModules(modulesData);
+                if (modulesData) {
+                    // Sort lessons
+                    const sorted = modulesData.map((m: any) => ({
+                        ...m,
+                        lessons: m.lessons?.sort((a: any, b: any) => a.sort_order - b.sort_order) || []
+                    }));
+                    setModules(sorted);
+                }
             }
             setLoading(false);
         };
 
         fetchCourse();
     }, [slug]);
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setVerifyingCoupon(true);
+        setDiscount(null);
+
+        const { data, error } = await supabase
+            .from('coupons')
+            .select('*')
+            .eq('code', couponCode.toUpperCase())
+            .eq('is_active', true)
+            .single();
+
+        if (error || !data) {
+            alert('Invalid or expired coupon code');
+        } else {
+            // Check expiry
+            if (data.valid_until && new Date(data.valid_until) < new Date()) {
+                alert('Coupon has expired');
+            } else if (data.max_uses && data.times_used >= data.max_uses) {
+                alert('Coupon usage limit reached');
+            } else {
+                setDiscount({ amount: data.discount_value, type: data.discount_type as any });
+                alert(`Coupon applied! ${data.discount_value}% OFF`);
+            }
+        }
+        setVerifyingCoupon(false);
+    };
 
     const handleEnroll = async () => {
         if (!course) return;
@@ -81,9 +126,13 @@ const CourseDetailPage = () => {
 
         // Check if already enrolled (double check)
         if (enrolled) {
-            navigate('/student'); // Or /learn/${course.id}
+            navigate('/student');
             return;
         }
+
+        // Mock Payment: In real app, create Order -> Process Payment -> Webhook -> Enroll
+        // Here we just Enroll directly.
+        // If Discount applied, we should record it (TODO: Order table support)
 
         // Create Enrollment
         const { error } = await supabase
@@ -98,6 +147,10 @@ const CourseDetailPage = () => {
             console.error('Enrollment Failed:', error);
             alert('Failed to enroll. Please try again.');
         } else {
+            // Update coupon usage if applicable
+            if (discount) {
+                // Logic to increment coupon usage would go here via RPC or API
+            }
             navigate(`/learn/${course.id}`);
         }
         setEnrolling(false);
@@ -143,13 +196,27 @@ const CourseDetailPage = () => {
                             <PlayCircle size={20} /> Continue Learning
                         </button>
                     ) : (
-                        <button
-                            onClick={handleEnroll}
-                            disabled={enrolling}
-                            className="px-8 py-4 bg-primary text-black rounded-full font-medium text-lg hover:bg-primary/90 transition-transform hover:scale-105 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {enrolling ? 'Enrolling...' : `Enroll Now for $${course.price}`}
-                        </button>
+                        <div className="flex flex-col items-center gap-4">
+                            <button
+                                onClick={handleEnroll}
+                                disabled={enrolling}
+                                className="px-8 py-4 bg-primary text-black rounded-full font-medium text-lg hover:bg-primary/90 transition-transform hover:scale-105 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {enrolling ? 'Enrolling...' : (
+                                    <span>
+                                        Enroll Now for
+                                        {discount ? (
+                                            <>
+                                                <span className="line-through opacity-50 mx-2">${course.price}</span>
+                                                ${finalPrice.toFixed(2)}
+                                            </>
+                                        ) : (
+                                            ` $${course.price}`
+                                        )}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -172,17 +239,32 @@ const CourseDetailPage = () => {
                                 <p className="text-zinc-500 italic">Curriculum coming soon.</p>
                             ) : (
                                 modules.map((m, i) => (
-                                    <div key={m.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-primary">
-                                                <PlayCircle size={20} />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-white font-medium">Module {i + 1}: {m.title}</h4>
-                                                {/* We don't have lesson count easily unless we fetch it. For now, hiding manual count. */}
-                                            </div>
+                                    <div key={m.id} className="border border-zinc-800 rounded-xl overflow-hidden">
+                                        <div className="bg-zinc-900 p-4 border-b border-zinc-800/50">
+                                            <h4 className="text-white font-bold">Module {i + 1}: {m.title}</h4>
                                         </div>
-                                        <Lock size={16} className="text-zinc-600" />
+                                        <div className="divide-y divide-zinc-800/50">
+                                            {m.lessons.map((lesson: any) => (
+                                                <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+                                                            <PlayCircle size={16} />
+                                                        </div>
+                                                        <span className="text-zinc-300">{lesson.title}</span>
+                                                    </div>
+                                                    {lesson.is_free_preview ? (
+                                                        <button
+                                                            onClick={() => navigate(`/learn/${course?.id}`)}
+                                                            className="text-xs px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full hover:bg-primary/20 transition-colors"
+                                                        >
+                                                            Free Preview
+                                                        </button>
+                                                    ) : (
+                                                        <Lock size={16} className="text-zinc-600" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))
                             )}
@@ -192,20 +274,49 @@ const CourseDetailPage = () => {
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 sticky top-24 backdrop-blur-xl">
-                        <h3 className="text-xl font-serif text-white mb-6">Features</h3>
-                        <ul className="space-y-4 text-zinc-400">
-                            {course.duration && (
-                                <li className="flex items-center gap-3"><Clock size={18} className="text-primary" /> {course.duration}</li>
-                            )}
-                            {course.community_access && (
-                                <li className="flex items-center gap-3"><Users size={18} className="text-primary" /> Community Access</li>
-                            )}
-                            {course.certificate && (
-                                <li className="flex items-center gap-3"><Star size={18} className="text-primary" /> Certificate of Completion</li>
-                            )}
-                            <li className="flex items-center gap-3"><PlayCircle size={18} className="text-primary" /> Lifetime Access</li>
-                        </ul>
+                    <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 sticky top-24 backdrop-blur-xl space-y-6">
+                        <div>
+                            <h3 className="text-xl font-serif text-white mb-6">Features</h3>
+                            <ul className="space-y-4 text-zinc-400">
+                                {course.duration && (
+                                    <li className="flex items-center gap-3"><Clock size={18} className="text-primary" /> {course.duration}</li>
+                                )}
+                                {course.community_access && (
+                                    <li className="flex items-center gap-3"><Users size={18} className="text-primary" /> Community Access</li>
+                                )}
+                                {course.certificate && (
+                                    <li className="flex items-center gap-3"><Star size={18} className="text-primary" /> Certificate of Completion</li>
+                                )}
+                                <li className="flex items-center gap-3"><PlayCircle size={18} className="text-primary" /> Lifetime Access</li>
+                            </ul>
+                        </div>
+
+                        {!enrolled && (
+                            <div className="pt-6 border-t border-white/5">
+                                <h4 className="text-white font-medium mb-3">Have a Coupon?</h4>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter Code"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value)}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50"
+                                    />
+                                    <button
+                                        onClick={handleApplyCoupon}
+                                        disabled={verifyingCoupon}
+                                        className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm transition-colors"
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
+                                {discount && (
+                                    <p className="text-green-400 text-xs mt-2">
+                                        Coupon Applied! {discount.amount}% Discount.
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

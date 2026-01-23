@@ -17,7 +17,6 @@ import AdminRevenue from './pages/dashboard/AdminRevenue';
 import SupportDashboard from './pages/dashboard/SupportDashboard';
 import CreateCoursePage from './pages/dashboard/CreateCoursePage';
 import LearnPage from './pages/LearnPage';
-import TestUserSeeder from './components/dev/TestUserSeeder';
 
 // New Support & Instructor Pages
 import SupportOrders from './pages/dashboard/support/SupportOrders';
@@ -93,8 +92,6 @@ function App() {
           </Route>
 
         </Routes>
-        {/* Development Helper */}
-        <TestUserSeeder />
       </Router>
     </ConfigProvider>
   );

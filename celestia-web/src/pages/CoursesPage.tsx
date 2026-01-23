@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Search } from 'lucide-react';
 import CourseCard from '../components/courses/CourseCard';
@@ -71,7 +72,9 @@ const CoursesPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredCourses.length > 0 ? (
                             filteredCourses.map(course => (
-                                <CourseCard key={course.id} {...course} />
+                                <Link to={`/courses/${course.slug}`} className="block group">
+                                    <CourseCard {...course} />
+                                </Link>
                             ))
                         ) : (
                             <div className="col-span-full text-center py-20 text-zinc-500">

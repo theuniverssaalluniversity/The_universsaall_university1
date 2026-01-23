@@ -27,6 +27,11 @@ type Lesson = {
     custom_url?: string; // For PDF/Live
     is_free_preview: boolean;
     sort_order: number;
+    metadata?: {
+        live_date?: string;
+        live_time?: string;
+        [key: string]: any;
+    };
 };
 
 const EditCourseContent = () => {
@@ -43,7 +48,6 @@ const EditCourseContent = () => {
 
     // Editing lesson state
     const [editingLesson, setEditingLesson] = useState<Partial<Lesson> | null>(null);
-    const [activeModuleId, setActiveModuleId] = useState<string | null>(null); // For adding new lesson
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [courseSettings, setCourseSettings] = useState({
@@ -215,7 +219,6 @@ const EditCourseContent = () => {
             // Refresh local state
             fetchCourseData(); // Simpler to just re-fetch to keep sort orders compliant
             setEditingLesson(null);
-            setActiveModuleId(null);
         }
     };
 
@@ -272,12 +275,21 @@ const EditCourseContent = () => {
                 </div>
 
                 {course?.status === 'draft' && (
-                    <button
-                        onClick={handlePublishCourse}
-                        className="px-6 py-2 bg-primary text-black rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
-                    >
-                        <Save size={18} /> Publish Course
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="p-2.5 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg transition-colors border border-white/10"
+                            title="Course Settings"
+                        >
+                            <Settings size={20} />
+                        </button>
+                        <button
+                            onClick={handlePublishCourse}
+                            className="px-6 py-2 bg-primary text-black rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
+                        >
+                            <Save size={18} /> Publish Course
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -343,7 +355,6 @@ const EditCourseContent = () => {
                                 <button
                                     onClick={() => {
                                         setEditingLesson({ module_id: module.id, content_type: 'video', is_free_preview: false, sort_order: module.lessons.length });
-                                        setActiveModuleId(module.id);
                                     }}
                                     className="w-full py-2 mt-2 border border-dashed border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                                 >
@@ -440,17 +451,48 @@ const EditCourseContent = () => {
                             )}
 
                             {['pdf', 'live'].includes(editingLesson.content_type || '') && (
-                                <div>
-                                    <label className="block text-sm text-zinc-400 mb-1">
-                                        {editingLesson.content_type === 'pdf' ? 'PDF Link (Google Drive/Dropbox)' : 'Meeting Link (Zoom/Meet)'}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editingLesson.custom_url || ''}
-                                        onChange={(e) => setEditingLesson({ ...editingLesson, custom_url: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
-                                        placeholder="https://..."
-                                    />
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-sm text-zinc-400 mb-1">
+                                            {editingLesson.content_type === 'pdf' ? 'PDF Link (Google Drive/Dropbox)' : 'Meeting Link (Zoom/Meet)'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={editingLesson.custom_url || ''}
+                                            onChange={(e) => setEditingLesson({ ...editingLesson, custom_url: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                                            placeholder="https://..."
+                                        />
+                                    </div>
+
+                                    {editingLesson.content_type === 'live' && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-sm text-zinc-400 mb-1">Class Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={editingLesson.metadata?.live_date || ''}
+                                                    onChange={(e) => setEditingLesson({
+                                                        ...editingLesson,
+                                                        metadata: { ...editingLesson.metadata, live_date: e.target.value }
+                                                    })}
+                                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm text-zinc-400 mb-1">Class Time</label>
+                                                <input
+                                                    type="time"
+                                                    value={editingLesson.metadata?.live_time || ''}
+                                                    onChange={(e) => setEditingLesson({
+                                                        ...editingLesson,
+                                                        metadata: { ...editingLesson.metadata, live_time: e.target.value }
+                                                    })}
+                                                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

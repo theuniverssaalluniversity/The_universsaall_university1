@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 
 const StudentDashboard = () => {
     const [courses, setCourses] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Mock user for now if enrollments role logic isn't fully seeded
@@ -47,7 +46,12 @@ const StudentDashboard = () => {
 
             {/* My Courses */}
             <div>
-                <h3 className="text-xl font-medium text-white mb-6">Continue Learning</h3>
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-medium text-white">Continue Learning</h3>
+                    <Link to="/courses" className="text-sm text-primary hover:text-white transition-colors flex items-center gap-1">
+                        Browse Marketplace <BookOpen size={16} />
+                    </Link>
+                </div>
                 {courses.length === 0 ? (
                     <div className="text-center py-12 bg-zinc-900 rounded-2xl border border-white/5 border-dashed">
                         <p className="text-zinc-500 mb-4">You haven't enrolled in any courses yet.</p>
@@ -58,29 +62,31 @@ const StudentDashboard = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {courses.map((enrollment: any) => (
-                            <div key={enrollment.id} className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden hover:border-primary/50 transition-colors">
-                                <div className="aspect-video bg-zinc-800 relative">
-                                    {enrollment.courses.thumbnail_url && (
-                                        <img src={enrollment.courses.thumbnail_url} className="w-full h-full object-cover" />
-                                    )}
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                        <Link to={`/learn/${enrollment.course_id}`} className="px-4 py-2 bg-white text-black rounded-full font-medium">Continue</Link>
+                            <Link to={`/learn/${enrollment.course_id}`} key={enrollment.id} className="block group">
+                                <div className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden hover:border-primary/50 transition-colors h-full">
+                                    <div className="aspect-video bg-zinc-800 relative">
+                                        {enrollment.courses.thumbnail_url && (
+                                            <img src={enrollment.courses.thumbnail_url} className="w-full h-full object-cover" />
+                                        )}
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="px-4 py-2 bg-white text-black rounded-full font-medium">Continue</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4">
+                                        <h4 className="font-medium text-white mb-2 group-hover:text-primary transition-colors">{enrollment.courses.title}</h4>
+                                        <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-primary"
+                                                style={{ width: `${enrollment.progress_percent}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                                            <span>{enrollment.progress_percent}% Complete</span>
+                                            <span>Last activity: 2d ago</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="p-4">
-                                    <h4 className="font-medium text-white mb-2">{enrollment.courses.title}</h4>
-                                    <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-primary"
-                                            style={{ width: `${enrollment.progress_percent}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between mt-2 text-xs text-zinc-500">
-                                        <span>{enrollment.progress_percent}% Complete</span>
-                                        <span>Last activity: 2d ago</span>
-                                    </div>
-                                </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}

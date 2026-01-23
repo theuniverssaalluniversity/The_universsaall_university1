@@ -71,7 +71,7 @@ const CreateCoursePage = () => {
             </div>
 
             <div className="bg-zinc-900 border border-white/5 rounded-xl p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form className="space-y-6">
                     {/* Title */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-400">Course Title</label>
