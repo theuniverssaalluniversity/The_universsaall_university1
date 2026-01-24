@@ -126,8 +126,8 @@ const AdminServices = () => {
                                     type="number"
                                     required
                                     min="1"
-                                    value={formData.duration_minutes || 60}
-                                    onChange={e => setFormData({ ...formData, duration_minutes: Number(e.target.value) })}
+                                    value={formData.duration_minutes ?? ''}
+                                    onChange={e => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
                                     className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white"
                                 />
                             </div>

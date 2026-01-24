@@ -42,12 +42,15 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
             { name: 'Dashboard', icon: LayoutDashboard, path: '/instructor' },
             { name: 'My Courses', icon: BookOpen, path: '/instructor/courses' },
             { name: 'Students', icon: Users, path: '/instructor/students' },
+            { name: 'Students', icon: Users, path: '/instructor/students' },
             { name: 'Earnings', icon: ShoppingBag, path: '/instructor/earnings' },
+            { name: 'Support', icon: HelpCircle, path: '/instructor/support' },
         ],
         admin: [
             { name: 'Overview', icon: LayoutDashboard, path: '/admin' },
             { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
-            { name: 'Enrollments', icon: BookOpen, path: '/admin/enrollments' }, // Fixed redirect bug
+            { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
+            { name: 'Enrollments', icon: Users, path: '/admin/enrollments' }, // Fixed redirect bug
             { name: 'Revenue', icon: ShoppingBag, path: '/admin/revenue' },
             { name: 'Services', icon: Sparkles, path: '/admin/services' },
             { name: 'Shop Products', icon: Tag, path: '/admin/shop' },

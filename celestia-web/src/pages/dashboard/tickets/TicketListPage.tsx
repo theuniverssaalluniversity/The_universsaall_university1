@@ -15,13 +15,30 @@ const TicketListPage = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        const { data: ticketsData } = await supabase
             .from('support_tickets')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-        if (data) setTickets(data);
+        if (ticketsData) {
+            // Check for last message
+            const ticketsWithMeta = await Promise.all(ticketsData.map(async (t) => {
+                const { data: msgs } = await supabase
+                    .from('chat_messages')
+                    .select('sender_id, message, created_at')
+                    .eq('ticket_id', t.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                return {
+                    ...t,
+                    last_message: msgs
+                };
+            }));
+            setTickets(ticketsWithMeta);
+        }
         setLoading(false);
     };
 
@@ -60,6 +77,11 @@ const TicketListPage = () => {
                                     <span className={`px-2 py-0.5 rounded text-xs font-medium border uppercase ${getStatusColor(ticket.status)}`}>
                                         {ticket.status}
                                     </span>
+                                    {ticket.last_message && ticket.last_message.sender_id !== ticket.user_id && (
+                                        <span className="px-2 py-0.5 rounded-full bg-primary text-black text-xs font-bold animate-pulse">
+                                            New Reply
+                                        </span>
+                                    )}
                                     <span className="text-zinc-500 text-xs uppercase">{ticket.priority} Priority</span>
                                 </div>
                                 <h3 className="text-white font-medium text-lg">{ticket.subject}</h3>
@@ -67,9 +89,12 @@ const TicketListPage = () => {
                                     <Clock size={14} /> Created {new Date(ticket.created_at).toLocaleDateString()}
                                 </div>
                             </div>
-                            <button className="text-primary text-sm font-medium flex items-center gap-1 hover:underline">
+                            <Link
+                                to={`${ticket.id}`}
+                                className="text-primary text-sm font-medium flex items-center gap-1 hover:underline"
+                            >
                                 View Thread <ExternalLink size={14} />
-                            </button>
+                            </Link>
                         </div>
                     ))}
                 </div>

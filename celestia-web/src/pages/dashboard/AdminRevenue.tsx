@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { DollarSign, TrendingUp, Calendar, CreditCard, Save } from 'lucide-react';
+
 
 interface TeacherStat {
     id: string;
@@ -162,14 +162,17 @@ const AdminRevenue = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="text-white">${teacher.total_sales.toLocaleString()}</div>
-                                    <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+                                    <div className="text-xs text-zinc-500 flex items-center gap-2 mt-1">
                                         Split:
                                         <input
                                             type="number"
-                                            className="bg-black border border-zinc-700 w-12 text-center rounded text-xs px-1"
+                                            className="bg-black border border-zinc-700 w-12 text-center rounded text-xs px-1 text-white"
                                             defaultValue={teacher.revenue_share}
                                             onBlur={(e) => updateSharePercent(teacher.id, Number(e.target.value))}
                                         /> %
+                                        <span className="text-zinc-600">
+                                            ({100 - (teacher.revenue_share || 70)}% Platform / {teacher.revenue_share || 70}% Instructor)
+                                        </span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-white font-medium">

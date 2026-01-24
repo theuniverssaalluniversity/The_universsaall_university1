@@ -27,12 +27,14 @@ import InstructorCourses from './pages/dashboard/instructor/InstructorCourses';
 import AdminCoupons from './pages/dashboard/AdminCoupons';
 import AdminEnrollments from './pages/dashboard/AdminEnrollments';
 import AdminServices from './pages/dashboard/AdminServices';
+import AdminCourses from './pages/dashboard/AdminCourses';
 import AdminShop from './pages/dashboard/AdminShop';
 import InstructorStudents from './pages/dashboard/instructor/InstructorStudents';
 import InstructorEarnings from './pages/dashboard/instructor/InstructorEarnings';
 import EditCourseContent from './pages/dashboard/instructor/EditCourseContent';
 import TicketListPage from './pages/dashboard/tickets/TicketListPage';
 import CreateTicketPage from './pages/dashboard/tickets/CreateTicketPage';
+import UserTicketChat from './pages/dashboard/tickets/UserTicketChat';
 import ServicesPage from './pages/ServicesPage';
 import ShopPage from './pages/ShopPage';
 
@@ -67,6 +69,7 @@ function App() {
               <Route path="orders" element={<StudentOrders />} />
               <Route path="support" element={<TicketListPage />} />
               <Route path="support/new" element={<CreateTicketPage />} />
+              <Route path="support/:ticketId" element={<UserTicketChat />} />
             </Route>
             <Route path="/learn/:courseId" element={<LearnPage />} />
           </Route>
@@ -79,7 +82,11 @@ function App() {
               <Route path="courses/:courseId/edit" element={<EditCourseContent />} />
               <Route path="courses" element={<InstructorCourses />} />
               <Route path="students" element={<InstructorStudents />} />
+              <Route path="students" element={<InstructorStudents />} />
               <Route path="earnings" element={<InstructorEarnings />} />
+              <Route path="support" element={<TicketListPage />} />
+              <Route path="support/new" element={<CreateTicketPage />} />
+              <Route path="support/:ticketId" element={<UserTicketChat />} />
             </Route>
           </Route>
 
@@ -95,6 +102,8 @@ function App() {
               <Route path="services" element={<AdminServices />} />
               <Route path="shop" element={<AdminShop />} />
               <Route path="coupons" element={<AdminCoupons />} />
+              <Route path="courses" element={<AdminCourses />} />
+              <Route path="create-course" element={<CreateCoursePage />} />
             </Route>
 
           </Route>

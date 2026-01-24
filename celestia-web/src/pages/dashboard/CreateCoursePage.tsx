@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabase';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -7,13 +7,36 @@ import { Link } from 'react-router-dom';
 const CreateCoursePage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [instructors, setInstructors] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         price: '',
         thumbnail_url: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2013&auto=format&fit=crop',
-        slug: ''
+        slug: '',
+        instructor_id: ''
     });
+
+    useEffect(() => {
+        checkUserRole();
+    }, []);
+
+    const checkUserRole = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
+            if (profile?.role === 'admin') {
+                setIsAdmin(true);
+                fetchInstructors();
+            }
+        }
+    };
+
+    const fetchInstructors = async () => {
+        const { data } = await supabase.from('users').select('id, full_name, email').eq('role', 'instructor');
+        if (data) setInstructors(data);
+    };
 
     const generateSlug = (title: string) => {
         return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -29,7 +52,6 @@ const CreateCoursePage = () => {
     };
 
     const handleSubmit = async (status: 'draft' | 'published') => {
-        // e.preventDefault() is not needed as these are type="button" now, or we can keep it if we pass logic differently
         setLoading(true);
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -40,6 +62,8 @@ const CreateCoursePage = () => {
             return;
         }
 
+        const finalInstructorId = isAdmin && formData.instructor_id ? formData.instructor_id : user.id;
+
         const { error } = await supabase
             .from('courses')
             .insert({
@@ -47,8 +71,8 @@ const CreateCoursePage = () => {
                 description: formData.description,
                 price: parseFloat(formData.price) || 0,
                 thumbnail_url: formData.thumbnail_url,
-                slug: formData.slug + '-' + Math.floor(Math.random() * 1000), // Ensure uniqueness
-                instructor_id: user.id,
+                slug: formData.slug + '-' + Math.floor(Math.random() * 1000),
+                instructor_id: finalInstructorId,
                 status: status
             });
 
@@ -56,7 +80,7 @@ const CreateCoursePage = () => {
             console.error(error);
             alert('Failed to create course. ' + error.message);
         } else {
-            navigate('/instructor');
+            navigate(isAdmin ? '/admin/courses' : '/instructor');
         }
         setLoading(false);
     };
@@ -64,14 +88,31 @@ const CreateCoursePage = () => {
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <div className="flex items-center gap-4">
-                <Link to="/instructor" className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">
+                <button onClick={() => navigate(-1)} className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">
                     <ArrowLeft size={20} />
-                </Link>
+                </button>
                 <h1 className="text-3xl font-serif text-white">Create New Course</h1>
             </div>
 
             <div className="bg-zinc-900 border border-white/5 rounded-xl p-8">
                 <form className="space-y-6">
+                    {/* Admin: Assign Instructor */}
+                    {isAdmin && (
+                        <div className="space-y-2 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                            <label className="text-sm font-bold text-primary">Assign Instructor (Admin)</label>
+                            <select
+                                value={formData.instructor_id}
+                                onChange={(e) => setFormData(prev => ({ ...prev, instructor_id: e.target.value }))}
+                                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
+                            >
+                                <option value="">-- Assign to Me (Admin) --</option>
+                                {instructors.map(inst => (
+                                    <option key={inst.id} value={inst.id}>{inst.full_name} ({inst.email})</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Title */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-400">Course Title</label>
@@ -164,5 +205,6 @@ const CreateCoursePage = () => {
         </div>
     );
 };
+
 
 export default CreateCoursePage;

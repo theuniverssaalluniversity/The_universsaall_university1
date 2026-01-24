@@ -130,28 +130,52 @@ const CourseDetailPage = () => {
             return;
         }
 
-        // Mock Payment: In real app, create Order -> Process Payment -> Webhook -> Enroll
-        // Here we just Enroll directly.
-        // If Discount applied, we should record it (TODO: Order table support)
+        try {
+            // 1. Create Order
+            const { data: order, error: orderError } = await supabase
+                .from('orders')
+                .insert({
+                    user_id: user.id,
+                    total_amount: finalPrice,
+                    status: 'completed', // Simulation: In real app, pending -> webhook -> completed
+                    payment_provider: 'mock_stripe',
+                    payment_id: `PAY-${Date.now()}`
+                })
+                .select()
+                .single();
 
-        // Create Enrollment
-        const { error } = await supabase
-            .from('enrollments')
-            .insert({
-                user_id: user.id,
-                course_id: course.id,
-                progress_percent: 0
-            });
+            if (orderError) throw orderError;
 
-        if (error) {
-            console.error('Enrollment Failed:', error);
-            alert('Failed to enroll. Please try again.');
-        } else {
-            // Update coupon usage if applicable
-            if (discount) {
-                // Logic to increment coupon usage would go here via RPC or API
-            }
+            // 2. Create Order Item
+            const { error: itemError } = await supabase
+                .from('order_items')
+                .insert({
+                    order_id: order.id,
+                    item_type: 'course',
+                    item_id: course.id,
+                    price: finalPrice // Actual price paid after discount
+                });
+
+            if (itemError) throw itemError;
+
+            // 3. Create Enrollment
+            const { error: enrollError } = await supabase
+                .from('enrollments')
+                .insert({
+                    user_id: user.id,
+                    course_id: course.id,
+                    progress_percent: 0
+                });
+
+            if (enrollError) throw enrollError;
+
+            // Success
+            alert('Enrolled successfully!');
             navigate(`/learn/${course.id}`);
+
+        } catch (error: any) {
+            console.error('Enrollment Failed:', error);
+            alert('Failed to enroll: ' + error.message);
         }
         setEnrolling(false);
     };

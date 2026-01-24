@@ -32,7 +32,11 @@ const CreateTicketPage = () => {
         if (error) {
             alert('Error creating ticket: ' + error.message);
         } else {
-            navigate('/student/support'); // Or /instructor/support depending on role
+            // Get role to redirect correctly
+            const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
+            const role = profile?.role || 'student';
+            if (role === 'instructor') navigate('/instructor/support');
+            else navigate('/student/support');
         }
         setLoading(false);
     };
