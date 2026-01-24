@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../utils/supabase';
-import { Send, User, Search, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Send, User, Search, AlertCircle, CheckCircle } from 'lucide-react';
 
 const SupportChat = () => {
     const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
@@ -8,9 +8,57 @@ const SupportChat = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Chat state
+    const [messages, setMessages] = useState<any[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [sending, setSending] = useState(false);
+
     useEffect(() => {
         fetchTickets();
     }, []);
+
+    useEffect(() => {
+        if (selectedTicket) {
+            fetchMessages(selectedTicket.id);
+        } else {
+            setMessages([]);
+        }
+    }, [selectedTicket]);
+
+    const fetchMessages = async (ticketId: string) => {
+        const { data } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('ticket_id', ticketId)
+            .order('created_at', { ascending: true });
+
+        if (data) setMessages(data);
+    };
+
+    const handleSendMessage = async () => {
+        if (!newMessage.trim() || !selectedTicket) return;
+        setSending(true);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('chat_messages')
+            .insert({
+                ticket_id: selectedTicket.id,
+                sender_id: user.id,
+                message: newMessage.trim()
+            });
+
+        if (!error) {
+            setNewMessage('');
+            fetchMessages(selectedTicket.id);
+        } else {
+            console.error('Error sending message:', error);
+            alert('Failed to send message');
+        }
+        setSending(false);
+    };
 
     const fetchTickets = async () => {
         setLoading(true);
@@ -123,8 +171,8 @@ const SupportChat = () => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase border ${selectedTicket.status === 'open' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                        selectedTicket.status === 'resolved' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                            'bg-zinc-800 text-zinc-400'
+                                    selectedTicket.status === 'resolved' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                        'bg-zinc-800 text-zinc-400'
                                     }`}>
                                     {selectedTicket.status}
                                 </span>
@@ -140,23 +188,27 @@ const SupportChat = () => {
                         </div>
 
                         {/* Ticket Content */}
-                        <div className="flex-1 p-8 overflow-y-auto space-y-6">
-                            <div>
-                                <h3 className="text-2xl font-serif text-white mb-2">{selectedTicket.subject}</h3>
-                                <div className="flex items-center gap-2 text-zinc-500 text-sm mb-6">
-                                    <Clock size={16} />
-                                    Submitted on {new Date(selectedTicket.created_at).toLocaleString()}
-                                </div>
-                                <div className="bg-black/30 border border-white/5 rounded-xl p-6 text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                                    {selectedTicket.message}
-                                </div>
+                        <div className="flex-1 p-8 overflow-y-auto space-y-6 flex flex-col">
+                            {/* Original Ticket Message */}
+                            <div className="bg-zinc-800/50 border border-white/5 rounded-xl p-6 text-zinc-300 leading-relaxed whitespace-pre-wrap self-start max-w-[85%]">
+                                <div className="text-xs text-zinc-500 mb-2 font-bold uppercase tracking-wider">Original Request</div>
+                                {selectedTicket.message}
                             </div>
 
-                            {/* Placeholder for reply history if implemented later */}
-                            <div className="flex items-center gap-2 text-zinc-500 text-sm">
-                                <AlertCircle size={16} />
-                                <span>Replies are currently handled via email notification system.</span>
-                            </div>
+                            {/* Chat History */}
+                            {messages.map((msg) => {
+                                return (
+                                    <div key={msg.id} className={`max-w-[80%] p-4 rounded-xl border ${msg.sender_id === selectedTicket.user_id
+                                        ? 'bg-zinc-800/50 border-white/5 self-start'
+                                        : 'bg-primary/10 border-primary/20 text-white self-end'
+                                        }`}>
+                                        <div className="text-xs opacity-50 mb-1">
+                                            {new Date(msg.created_at).toLocaleString()}
+                                        </div>
+                                        {msg.message}
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {/* Reply Input (Visual only for now) */}
@@ -164,10 +216,17 @@ const SupportChat = () => {
                             <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Type an internal note or reply..."
+                                    placeholder="Type a response..."
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                     className="flex-1 bg-black border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
                                 />
-                                <button className="bg-primary text-black px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                                <button
+                                    onClick={handleSendMessage}
+                                    disabled={sending || !newMessage.trim()}
+                                    className="bg-primary text-black px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
                                     <Send size={20} />
                                 </button>
                             </div>
