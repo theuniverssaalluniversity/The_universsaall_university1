@@ -88,7 +88,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Latest Courses Teaser (Static Placeholder for now) */}
+            {/* Latest Courses Teaser */}
             <section className="py-24 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-end mb-12">
@@ -101,28 +101,101 @@ const LandingPage = () => {
                         </Link>
                     </div>
 
-                    {/* Placeholder Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[1, 2, 3].map((_, i) => (
-                            <div key={i} className="group cursor-pointer">
-                                <div className="aspect-[4/3] bg-zinc-800 rounded-xl overflow-hidden mb-6 relative">
-                                    <div className="absolute inset-0 bg-zinc-800 animate-pulse" />
-                                    {/* In real implementation, this would be an image */}
-                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-                                </div>
-                                <h3 className="text-xl font-medium text-white group-hover:text-primary transition-colors mb-2">
-                                    Introduction to Vedic Astrology
-                                </h3>
-                                <p className="text-zinc-500 text-sm">By Master Guide • 12 Lessons</p>
-                            </div>
-                        ))}
-                    </div>
+                    <FeaturedCoursesGrid />
+
                     <div className="mt-8 text-center md:hidden">
                         <Link to="/courses" className="text-primary hover:text-accent font-medium">View All Courses</Link>
                     </div>
                 </div>
             </section>
+        </div>
+    );
+};
 
+// Sub-component for data fetching
+import { useEffect, useState } from 'react';
+import { supabase } from '../utils/supabase';
+
+const FeaturedCoursesGrid = () => {
+    const [courses, setCourses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFeatured = async () => {
+            // First try to get explicitly featured courses
+            let { data } = await supabase
+                .from('courses')
+                .select('*')
+                .eq('status', 'published')
+                .eq('is_deleted', false)
+                .eq('is_featured', true)
+                .limit(3);
+
+            // Fallback: If no featured courses, get latest published
+            if (!data || data.length === 0) {
+                const { data: latest } = await supabase
+                    .from('courses')
+                    .select('*')
+                    .eq('status', 'published')
+                    .eq('is_deleted', false)
+                    .order('created_at', { ascending: false })
+                    .limit(3);
+                data = latest || [];
+            }
+
+            setCourses(data || []);
+            setLoading(false);
+        };
+        fetchFeatured();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="aspect-[4/3] bg-zinc-800/50 animate-pulse rounded-xl" />
+                ))}
+            </div>
+        );
+    }
+
+    if (courses.length === 0) {
+        return (
+            <div className="text-center py-12 border border-dashed border-zinc-800 rounded-xl">
+                <p className="text-zinc-500">No courses available yet.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {courses.map((course) => (
+                <Link key={course.id} to={`/courses/${course.id}`} className="group cursor-pointer">
+                    <div className="aspect-[4/3] bg-zinc-800 rounded-xl overflow-hidden mb-6 relative">
+                        {course.thumbnail_url ? (
+                            <img
+                                src={course.thumbnail_url}
+                                alt={course.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-600">
+                                No Image
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+                    </div>
+                    <h3 className="text-xl font-medium text-white group-hover:text-primary transition-colors mb-2">
+                        {course.title}
+                    </h3>
+                    <p className="text-zinc-500 text-sm line-clamp-2">{course.description}</p>
+                    <div className="mt-3 flex items-center gap-2 text-sm text-primary">
+                        <span>{course.price > 0 ? `$${course.price}` : 'Free'}</span>
+                        <span className="w-1 h-1 bg-zinc-600 rounded-full" />
+                        <span>View Details</span>
+                    </div>
+                </Link>
+            ))}
         </div>
     );
 };

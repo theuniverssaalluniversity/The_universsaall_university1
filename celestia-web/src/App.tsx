@@ -19,14 +19,22 @@ import CreateCoursePage from './pages/dashboard/CreateCoursePage';
 import LearnPage from './pages/LearnPage';
 
 // New Support & Instructor Pages
+import StudentOrders from './pages/dashboard/student/StudentOrders';
 import SupportOrders from './pages/dashboard/support/SupportOrders';
 import SupportEnrollments from './pages/dashboard/support/SupportEnrollments';
 import SupportChat from './pages/dashboard/support/SupportChat';
 import InstructorCourses from './pages/dashboard/instructor/InstructorCourses';
 import AdminCoupons from './pages/dashboard/AdminCoupons';
+import AdminEnrollments from './pages/dashboard/AdminEnrollments';
+import AdminServices from './pages/dashboard/AdminServices';
+import AdminShop from './pages/dashboard/AdminShop';
 import InstructorStudents from './pages/dashboard/instructor/InstructorStudents';
 import InstructorEarnings from './pages/dashboard/instructor/InstructorEarnings';
 import EditCourseContent from './pages/dashboard/instructor/EditCourseContent';
+import TicketListPage from './pages/dashboard/tickets/TicketListPage';
+import CreateTicketPage from './pages/dashboard/tickets/CreateTicketPage';
+import ServicesPage from './pages/ServicesPage';
+import ShopPage from './pages/ShopPage';
 
 function App() {
   return (
@@ -36,10 +44,14 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
             {/* Placeholder routes for now */}
+            {/* Placeholder routes for now */}
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/courses/:slug" element={<CourseDetailPage />} />
-            <Route path="/readings" element={<div className="p-20 text-center text-zinc-500">Bookings (Coming Soon)</div>} />
-            <Route path="/shop" element={<div className="p-20 text-center text-zinc-500">Shop (Coming Soon)</div>} />
+
+            // ... insideRoutes ...
+            <Route path="/readings" element={<ServicesPage type="reading" />} />
+            <Route path="/healings" element={<ServicesPage type="healing" />} />
+            <Route path="/shop" element={<ShopPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/cart" element={<div className="p-20 text-center text-zinc-500">Cart (Coming Soon)</div>} />
@@ -52,7 +64,9 @@ function App() {
             <Route path="/student" element={<DashboardLayout role="student" />}>
               <Route index element={<StudentDashboard />} />
               <Route path="courses" element={<StudentDashboard />} /> {/* Alias for now */}
-              <Route path="orders" element={<div className="p-10">My Orders (Coming Soon)</div>} />
+              <Route path="orders" element={<StudentOrders />} />
+              <Route path="support" element={<TicketListPage />} />
+              <Route path="support/new" element={<CreateTicketPage />} />
             </Route>
             <Route path="/learn/:courseId" element={<LearnPage />} />
           </Route>
@@ -76,6 +90,10 @@ function App() {
               <Route path="settings" element={<AdminSettings />} />
               <Route path="staff" element={<AdminStaff />} />
               <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="enrollments" element={<AdminEnrollments />} />
+              <Route path="enrollments" element={<AdminEnrollments />} />
+              <Route path="services" element={<AdminServices />} />
+              <Route path="shop" element={<AdminShop />} />
               <Route path="coupons" element={<AdminCoupons />} />
             </Route>
 

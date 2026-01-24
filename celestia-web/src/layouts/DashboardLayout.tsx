@@ -4,7 +4,7 @@ import { useConfig } from '../context/ConfigContext';
 import { supabase } from '../utils/supabase';
 import {
     LayoutDashboard, BookOpen, Users, ShoppingBag,
-    Settings, LogOut, Menu, X, Bell, LifeBuoy, Tag
+    Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, Sparkles
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -36,6 +36,7 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
             { name: 'Dashboard', icon: LayoutDashboard, path: '/student' },
             { name: 'My Courses', icon: BookOpen, path: '/student/courses' },
             { name: 'My Orders', icon: ShoppingBag, path: '/student/orders' },
+            { name: 'Support', icon: HelpCircle, path: '/student/support' },
         ],
         instructor: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/instructor' },
@@ -46,8 +47,10 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         admin: [
             { name: 'Overview', icon: LayoutDashboard, path: '/admin' },
             { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
-            { name: 'Enrollments', icon: BookOpen, path: '/support/enrollments' }, // Added as requested
+            { name: 'Enrollments', icon: BookOpen, path: '/admin/enrollments' }, // Fixed redirect bug
             { name: 'Revenue', icon: ShoppingBag, path: '/admin/revenue' },
+            { name: 'Services', icon: Sparkles, path: '/admin/services' },
+            { name: 'Shop Products', icon: Tag, path: '/admin/shop' },
             { name: 'Coupons', icon: Tag, path: '/admin/coupons' },
             // { name: 'Logs', icon: Shield, path: '/admin/logs' },
             { name: 'Settings', icon: Settings, path: '/admin/settings' },
@@ -135,6 +138,7 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
+                {/* Header */}
                 <header className="h-20 border-b border-white/5 bg-zinc-900/50 backdrop-blur sticky top-0 z-30 flex items-center justify-between px-6">
                     <div className="flex items-center gap-4">
                         <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5">
@@ -145,29 +149,25 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
                         </h2>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <button className="p-2 text-zinc-400 hover:text-white relative">
-                            <Bell size={20} />
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-                        </button>
-                        <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10" />
-                    </div>
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10" />
                 </header>
 
                 {/* Page Content */}
                 <main className="flex-1 p-6 md:p-8 overflow-y-auto">
                     <Outlet />
                 </main>
-            </div>
+            </div >
 
             {/* Mobile Overlay */}
-            {isMobile && isSidebarOpen && (
-                <div
-                    onClick={() => setSidebarOpen(false)}
-                    className="fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
-                />
-            )}
-        </div>
+            {
+                isMobile && isSidebarOpen && (
+                    <div
+                        onClick={() => setSidebarOpen(false)}
+                        className="fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
+                    />
+                )
+            }
+        </div >
     );
 };
 
