@@ -76,7 +76,7 @@ const AdminCourses = () => {
                                 <img src={course.thumbnail_url} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2">
                                     <Link
-                                        to={`/instructor/courses/${course.id}/edit`} // Reuse Editor
+                                        to={`/admin/courses/${course.id}/edit`} // Admin specific route
                                         className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                                         title="Edit Content"
                                     >

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useConfig } from '../context/ConfigContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { supabase } from '../utils/supabase';
 import {
     LayoutDashboard, BookOpen, Users, ShoppingBag,
@@ -10,6 +11,7 @@ import clsx from 'clsx';
 
 const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 'support' }) => {
     const config = useConfig();
+    const { currency, setCurrency } = useCurrency();
     const location = useLocation();
     const navigate = useNavigate();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -41,7 +43,6 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         instructor: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/instructor' },
             { name: 'My Courses', icon: BookOpen, path: '/instructor/courses' },
-            { name: 'Students', icon: Users, path: '/instructor/students' },
             { name: 'Students', icon: Users, path: '/instructor/students' },
             { name: 'Earnings', icon: ShoppingBag, path: '/instructor/earnings' },
             { name: 'Support', icon: HelpCircle, path: '/instructor/support' },
@@ -152,7 +153,20 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
                         </h2>
                     </div>
 
-                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10" />
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setCurrency(currency === 'USD' ? 'INR' : 'USD')}
+                            className="px-3 py-1.5 bg-zinc-800 border border-white/10 rounded-lg text-xs font-bold text-white hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                        >
+                            <span className={currency === 'USD' ? 'text-primary' : 'text-zinc-500'}>$</span>
+                            <span className="w-px h-3 bg-white/10"></span>
+                            <span className={currency === 'INR' ? 'text-primary' : 'text-zinc-500'}>₹</span>
+                        </button>
+                        <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-bold text-white">
+                            {/* Placeholder for User Initials */}
+                            U
+                        </div>
+                    </div>
                 </header>
 
                 {/* Page Content */}

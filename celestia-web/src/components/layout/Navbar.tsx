@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import { Menu, ShoppingBag, User } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +8,7 @@ import clsx from 'clsx';
 
 const Navbar = () => {
     const config = useConfig();
+    const { currency, setCurrency } = useCurrency();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -57,6 +59,14 @@ const Navbar = () => {
 
                     {/* Actions */}
                     <div className="hidden md:flex items-center gap-4">
+                        <button
+                            onClick={() => setCurrency(currency === 'USD' ? 'INR' : 'USD')}
+                            className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                        >
+                            <span className={currency === 'USD' ? 'text-primary' : 'text-zinc-500'}>$</span>
+                            <span className="w-px h-3 bg-white/10"></span>
+                            <span className={currency === 'INR' ? 'text-primary' : 'text-zinc-500'}>₹</span>
+                        </button>
                         <Link to="/cart" className="p-2 text-muted-foreground hover:text-primary transition-colors">
                             <ShoppingBag size={20} />
                         </Link>

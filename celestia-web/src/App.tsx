@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ConfigProvider } from './context/ConfigContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import PublicLayout from './layouts/PublicLayout';
 import LandingPage from './pages/LandingPage';
 import CoursesPage from './pages/CoursesPage';
@@ -28,6 +29,7 @@ import AdminCoupons from './pages/dashboard/AdminCoupons';
 import AdminEnrollments from './pages/dashboard/AdminEnrollments';
 import AdminServices from './pages/dashboard/AdminServices';
 import AdminCourses from './pages/dashboard/AdminCourses';
+import AdminEditCourse from './pages/dashboard/AdminEditCourse';
 import AdminShop from './pages/dashboard/AdminShop';
 import InstructorStudents from './pages/dashboard/instructor/InstructorStudents';
 import InstructorEarnings from './pages/dashboard/instructor/InstructorEarnings';
@@ -41,85 +43,87 @@ import ShopPage from './pages/ShopPage';
 function App() {
   return (
     <ConfigProvider>
-      <Router>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
-            {/* Placeholder routes for now */}
-            {/* Placeholder routes for now */}
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/courses/:slug" element={<CourseDetailPage />} />
+      <CurrencyProvider>
+        <Router>
+          <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/courses/:slug" element={<CourseDetailPage />} />
 
-            // ... insideRoutes ...
-            <Route path="/readings" element={<ServicesPage type="reading" />} />
-            <Route path="/healings" element={<ServicesPage type="healing" />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/cart" element={<div className="p-20 text-center text-zinc-500">Cart (Coming Soon)</div>} />
-          </Route>
+              {/* Dynamic Services Route */}
+              <Route path="/services/:categorySlug" element={<ServicesPage />} />
 
-          {/* Protected Dashboards */}
+              {/* Legacy Routes (Mapped to new component in ServicesPage) */}
+              <Route path="/readings" element={<ServicesPage categorySlug="reading" />} />
+              <Route path="/healings" element={<ServicesPage categorySlug="healing" />} />
 
-          {/* Student */}
-          <Route element={<RoleGuard allowedRoles={['student']} />}>
-            <Route path="/student" element={<DashboardLayout role="student" />}>
-              <Route index element={<StudentDashboard />} />
-              <Route path="courses" element={<StudentDashboard />} /> {/* Alias for now */}
-              <Route path="orders" element={<StudentOrders />} />
-              <Route path="support" element={<TicketListPage />} />
-              <Route path="support/new" element={<CreateTicketPage />} />
-              <Route path="support/:ticketId" element={<UserTicketChat />} />
-            </Route>
-            <Route path="/learn/:courseId" element={<LearnPage />} />
-          </Route>
-
-          {/* Instructor */}
-          <Route element={<RoleGuard allowedRoles={['instructor']} />}>
-            <Route path="/instructor" element={<DashboardLayout role="instructor" />}>
-              <Route index element={<InstructorDashboard />} />
-              <Route path="create-course" element={<CreateCoursePage />} />
-              <Route path="courses/:courseId/edit" element={<EditCourseContent />} />
-              <Route path="courses" element={<InstructorCourses />} />
-              <Route path="students" element={<InstructorStudents />} />
-              <Route path="students" element={<InstructorStudents />} />
-              <Route path="earnings" element={<InstructorEarnings />} />
-              <Route path="support" element={<TicketListPage />} />
-              <Route path="support/new" element={<CreateTicketPage />} />
-              <Route path="support/:ticketId" element={<UserTicketChat />} />
-            </Route>
-          </Route>
-
-          {/* Admin */}
-          <Route element={<RoleGuard allowedRoles={['admin']} />}>
-            <Route path="/admin" element={<DashboardLayout role="admin" />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="staff" element={<AdminStaff />} />
-              <Route path="revenue" element={<AdminRevenue />} />
-              <Route path="enrollments" element={<AdminEnrollments />} />
-              <Route path="enrollments" element={<AdminEnrollments />} />
-              <Route path="services" element={<AdminServices />} />
-              <Route path="shop" element={<AdminShop />} />
-              <Route path="coupons" element={<AdminCoupons />} />
-              <Route path="courses" element={<AdminCourses />} />
-              <Route path="create-course" element={<CreateCoursePage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/cart" element={<div className="p-20 text-center text-zinc-500">Cart (Coming Soon)</div>} />
             </Route>
 
-          </Route>
+            {/* Protected Dashboards */}
 
-          {/* Support */}
-          <Route element={<RoleGuard allowedRoles={['support', 'admin']} />}>
-            <Route path="/support" element={<DashboardLayout role="support" />}>
-              <Route index element={<SupportDashboard />} />
-              <Route path="orders" element={<SupportOrders />} />
-              <Route path="enrollments" element={<SupportEnrollments />} />
-              <Route path="chat" element={<SupportChat />} />
+            {/* Student */}
+            <Route element={<RoleGuard allowedRoles={['student']} />}>
+              <Route path="/student" element={<DashboardLayout role="student" />}>
+                <Route index element={<StudentDashboard />} />
+                <Route path="courses" element={<StudentDashboard />} /> {/* Alias for now */}
+                <Route path="orders" element={<StudentOrders />} />
+                <Route path="support" element={<TicketListPage />} />
+                <Route path="support/new" element={<CreateTicketPage />} />
+                <Route path="support/:ticketId" element={<UserTicketChat />} />
+              </Route>
+              <Route path="/learn/:courseId" element={<LearnPage />} />
             </Route>
-          </Route>
 
-        </Routes>
-      </Router>
+            {/* Instructor */}
+            <Route element={<RoleGuard allowedRoles={['instructor']} />}>
+              <Route path="/instructor" element={<DashboardLayout role="instructor" />}>
+                <Route index element={<InstructorDashboard />} />
+                <Route path="create-course" element={<CreateCoursePage />} />
+                <Route path="courses/:courseId/edit" element={<EditCourseContent />} />
+                <Route path="courses" element={<InstructorCourses />} />
+                <Route path="students" element={<InstructorStudents />} />
+                <Route path="earnings" element={<InstructorEarnings />} />
+                <Route path="support" element={<TicketListPage />} />
+                <Route path="support/new" element={<CreateTicketPage />} />
+                <Route path="support/:ticketId" element={<UserTicketChat />} />
+              </Route>
+            </Route>
+
+            {/* Admin */}
+            <Route element={<RoleGuard allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<DashboardLayout role="admin" />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="settings" element={<AdminSettings />} />
+                <Route path="staff" element={<AdminStaff />} />
+                <Route path="revenue" element={<AdminRevenue />} />
+                <Route path="enrollments" element={<AdminEnrollments />} />
+                <Route path="services" element={<AdminServices />} />
+                <Route path="shop" element={<AdminShop />} />
+                <Route path="coupons" element={<AdminCoupons />} />
+                <Route path="courses" element={<AdminCourses />} />
+                <Route path="courses/:courseId/edit" element={<AdminEditCourse />} />
+                <Route path="create-course" element={<CreateCoursePage />} />
+              </Route>
+            </Route>
+
+            {/* Support */}
+            <Route element={<RoleGuard allowedRoles={['support', 'admin']} />}>
+              <Route path="/support" element={<DashboardLayout role="support" />}>
+                <Route index element={<SupportDashboard />} />
+                <Route path="orders" element={<SupportOrders />} />
+                <Route path="enrollments" element={<SupportEnrollments />} />
+                <Route path="chat" element={<SupportChat />} />
+              </Route>
+            </Route>
+
+          </Routes>
+        </Router>
+      </CurrencyProvider>
     </ConfigProvider>
   );
 }

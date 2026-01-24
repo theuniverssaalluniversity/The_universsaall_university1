@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { Clock, Calendar, ArrowRight, Sparkles, Heart } from 'lucide-react';
+import { Clock, Calendar, ArrowRight, Sparkles, Heart, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface Service {
     id: string;
@@ -9,37 +11,81 @@ interface Service {
     description: string;
     duration_minutes: number;
     price: number;
-    type: 'reading' | 'healing';
+    price_inr?: number;
+    display_mode?: 'content' | 'redirect';
+    redirect_url?: string;
+}
+
+interface Category {
+    id: string;
+    title: string;
+    description: string;
+    slug: string;
+    icon_name?: string;
 }
 
 interface ServicesPageProps {
-    type: 'reading' | 'healing';
+    categorySlug?: string;
 }
 
-const ServicesPage = ({ type }: ServicesPageProps) => {
+const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
+    const { categorySlug: paramSlug } = useParams();
+    const slug = propSlug || paramSlug || 'reading';
+
+    const { formatPrice } = useCurrency();
     const [services, setServices] = useState<Service[]>([]);
+    const [category, setCategory] = useState<Category | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchServices = async () => {
+        const fetchData = async () => {
             setLoading(true);
-            const { data } = await supabase
-                .from('services')
-                .select('*')
-                .eq('type', type)
-                .order('price', { ascending: true });
 
-            if (data) setServices(data);
+            // 1. Fetch Category Info
+            const { data: catData } = await supabase
+                .from('service_categories')
+                .select('*')
+                .eq('slug', slug)
+                .single();
+
+            if (catData) {
+                setCategory(catData);
+
+                // 2. Fetch Services
+                const { data: svcData } = await supabase
+                    .from('services')
+                    .select('*')
+                    .eq('category_id', catData.id)
+                    .order('price', { ascending: true });
+
+                if (svcData) setServices(svcData);
+            } else {
+                // Fallback for legacy "type" based behavior if category not found (optional)
+                // or just show empty
+            }
             setLoading(false);
         };
-        fetchServices();
-    }, [type]);
+        fetchData();
+    }, [slug]);
 
-    const title = type === 'reading' ? 'Cosmic Readings' : 'Spiritual Healings';
-    const subtitle = type === 'reading'
-        ? 'Gain clarity and insight into your life path with our expert astrological readings.'
-        : 'Restore balance and harmony to your energy field with our transformative healing sessions.';
-    const Icon = type === 'reading' ? Sparkles : Heart;
+    const handleBook = (service: Service) => {
+        if (service.display_mode === 'redirect' && service.redirect_url) {
+            window.location.href = service.redirect_url;
+        } else {
+            // Internal booking flow (Cart or Booking Page)
+            // For now, simple alert or navigate
+            alert('Booking flow coming soon!');
+        }
+    };
+
+    if (loading) return <div className="min-h-screen pt-40 text-center text-zinc-500">Loading services...</div>;
+
+    if (!category) return (
+        <div className="min-h-screen pt-40 text-center text-zinc-500">
+            <h1 className="text-2xl text-white mb-2">Category Not Found</h1>
+            <p>The requested service category "{slug}" does not exist.</p>
+        </div>
+    );
 
     return (
         <div className="min-h-screen pt-20 pb-12">
@@ -53,11 +99,11 @@ const ServicesPage = ({ type }: ServicesPageProps) => {
                         transition={{ duration: 0.6 }}
                     >
                         <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6">
-                            <Icon size={32} />
+                            {slug === 'healing' ? <Heart size={32} /> : <Sparkles size={32} />}
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-serif text-white mb-6">{title}</h1>
+                        <h1 className="text-4xl md:text-6xl font-serif text-white mb-6">{category.title}</h1>
                         <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-                            {subtitle}
+                            {category.description || `Explore our ${category.title} services designed to guide and heal.`}
                         </p>
                     </motion.div>
                 </div>
@@ -65,16 +111,9 @@ const ServicesPage = ({ type }: ServicesPageProps) => {
 
             {/* Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-64 bg-zinc-800/50 animate-pulse rounded-2xl" />
-                        ))}
-                    </div>
-                ) : services.length === 0 ? (
+                {services.length === 0 ? (
                     <div className="text-center py-20 border border-dashed border-zinc-800 rounded-2xl">
-                        <p className="text-zinc-500 text-lg">No {type} services available at the moment.</p>
-                        <p className="text-zinc-600 mt-2">Please check back later.</p>
+                        <p className="text-zinc-500 text-lg">No services available in this category yet.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -99,16 +138,19 @@ const ServicesPage = ({ type }: ServicesPageProps) => {
                                         <span>{service.duration_minutes} mins</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Calendar size={16} />
-                                        <span>Book Now</span>
+                                        {service.display_mode === 'redirect' ? <ExternalLink size={16} /> : <Calendar size={16} />}
+                                        <span>{service.display_mode === 'redirect' ? 'External' : 'Book Now'}</span>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between pt-6 border-t border-white/5">
                                     <span className="text-2xl font-medium text-white">
-                                        ${service.price}
+                                        {formatPrice(service.price, service.price_inr)}
                                     </span>
-                                    <button className="px-6 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-primary hover:text-black transition-colors flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleBook(service)}
+                                        className="px-6 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-primary hover:text-black transition-colors flex items-center gap-2"
+                                    >
                                         Book <ArrowRight size={18} />
                                     </button>
                                 </div>

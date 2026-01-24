@@ -31,12 +31,21 @@ const InstructorEarnings = () => {
         if (courseIds.length > 0) {
             const { data: fetchedItems } = await supabase
                 .from('order_items')
-                .select('price, item_id') // Fetch item_id too for grouping
+                .select(`
+                    price, 
+                    item_id, 
+                    order:orders!inner(currency)
+                `)
                 .eq('item_type', 'course')
                 .in('item_id', courseIds);
 
             items = fetchedItems || [];
-            totalSales = items.reduce((sum, item) => sum + item.price, 0);
+            totalSales = items.reduce((sum, item: any) => {
+                const currency = item.order?.currency || 'USD';
+                // 1 USD approx 83 INR
+                const val = currency === 'INR' ? item.price : (item.price * 83);
+                return sum + val;
+            }, 0);
         }
 
         // 3. Get Payouts
@@ -55,7 +64,11 @@ const InstructorEarnings = () => {
         const { data: allEnrollments } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds);
 
         const courseStats = courses?.map((course: any) => {
-            const courseSales = items?.filter((i: any) => i.item_id === course.id).reduce((sum: number, i: any) => sum + i.price, 0) || 0;
+            const courseSales = items?.filter((i: any) => i.item_id === course.id).reduce((sum: number, i: any) => {
+                const currency = i.order?.currency || 'USD';
+                return sum + (currency === 'INR' ? i.price : (i.price * 83));
+            }, 0) || 0;
+
             const studentCount = allEnrollments?.filter((e: any) => e.course_id === course.id).length || 0;
             return {
                 id: course.id,
@@ -83,14 +96,14 @@ const InstructorEarnings = () => {
                 <div className="bg-zinc-900 border border-white/5 p-6 rounded-xl relative overflow-hidden group">
                     <div className="absolute right-0 top-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
                     <div>
-                        <h4 className="text-zinc-400 text-sm">Lifetime Earnings</h4>
-                        <div className="text-4xl font-serif text-white mt-2">${stats.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <h4 className="text-zinc-400 text-sm">Lifetime Earnings (INR)</h4>
+                        <div className="text-4xl font-serif text-white mt-2">₹{stats.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
                     </div>
                 </div>
                 <div className="bg-zinc-900 border border-white/5 p-6 rounded-xl">
                     <div>
-                        <h4 className="text-zinc-400 text-sm">Pending Payout</h4>
-                        <div className="text-4xl font-serif text-zinc-300 mt-2">${stats.pending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <h4 className="text-zinc-400 text-sm">Pending Payout (INR)</h4>
+                        <div className="text-4xl font-serif text-zinc-300 mt-2">₹{stats.pending.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
                         <div className="text-xs text-zinc-500 mt-1">Payable by Admin</div>
                     </div>
                 </div>
@@ -105,7 +118,7 @@ const InstructorEarnings = () => {
                             <tr>
                                 <th className="px-6 py-4">Course Title</th>
                                 <th className="px-6 py-4">Students</th>
-                                <th className="px-6 py-4">Gross Revenue</th>
+                                <th className="px-6 py-4">Gross Revenue (₹)</th>
                                 <th className="px-6 py-4">Your Earnings ({sharePercent}%)</th>
                             </tr>
                         </thead>
@@ -117,8 +130,8 @@ const InstructorEarnings = () => {
                                     <tr key={course.id} className="hover:bg-white/5 transition-colors">
                                         <td className="px-6 py-4 font-medium text-white">{course.title}</td>
                                         <td className="px-6 py-4 text-zinc-400">{course.students}</td>
-                                        <td className="px-6 py-4 text-zinc-300">${course.revenue.toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-green-400 font-bold">${((course.revenue * sharePercent) / 100).toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-zinc-300">₹{course.revenue.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-green-400 font-bold">₹{((course.revenue * sharePercent) / 100).toLocaleString()}</td>
                                     </tr>
                                 ))
                             )}
@@ -140,7 +153,7 @@ const InstructorEarnings = () => {
                         <tr>
                             <th className="px-6 py-4">Date</th>
                             <th className="px-6 py-4">Reference ID</th>
-                            <th className="px-6 py-4">Amount</th>
+                            <th className="px-6 py-4">Amount (₹)</th>
                             <th className="px-6 py-4">Status</th>
                         </tr>
                     </thead>
@@ -154,7 +167,7 @@ const InstructorEarnings = () => {
                                 <tr key={payout.id} className="hover:bg-white/5 transition-colors">
                                     <td className="px-6 py-4 text-zinc-300">{new Date(payout.created_at).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{payout.reference_id || '-'}</td>
-                                    <td className="px-6 py-4 text-white font-medium">${payout.amount}</td>
+                                    <td className="px-6 py-4 text-white font-medium">₹{payout.amount}</td>
                                     <td className="px-6 py-4">
                                         <span className={`text-xs px-2 py-1 rounded capitalize ${payout.status === 'paid' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'
                                             }`}>
