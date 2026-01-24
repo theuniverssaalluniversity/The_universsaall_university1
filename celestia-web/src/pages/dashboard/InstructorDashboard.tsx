@@ -13,7 +13,7 @@ const InstructorDashboard = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // Fetch Courses
+            // 1. Fetch My Courses
             const { data: courses } = await supabase
                 .from('courses')
                 .select('*')
@@ -21,7 +21,35 @@ const InstructorDashboard = () => {
 
             if (courses) {
                 setActiveCourses(courses);
-                setStats(prev => ({ ...prev, courses: courses.length }));
+                const courseIds = courses.map(c => c.id);
+
+                // 2. Fetch Student Count (Unique Enrollments)
+                // Using RLS: "Instructors can view enrollments for their courses"
+                if (courseIds.length > 0) {
+                    const { count } = await supabase
+                        .from('enrollments')
+                        .select('id', { count: 'exact', head: true })
+                        // No explicit filter needed if RLS handles it, but explicit is safer for performance
+                        .in('course_id', courseIds);
+
+                    // 3. Fetch Revenue (Order Items)
+                    // Using RLS: "Instructors can view order_items for their courses"
+                    const { data: orderItems } = await supabase
+                        .from('order_items')
+                        .select('price')
+                        .eq('item_type', 'course')
+                        .in('item_id', courseIds);
+
+                    const totalRevenue = orderItems?.reduce((sum, item) => sum + item.price, 0) || 0;
+
+                    setStats({
+                        students: count || 0,
+                        courses: courses.length,
+                        revenue: totalRevenue
+                    });
+                } else {
+                    setStats({ students: 0, courses: 0, revenue: 0 });
+                }
             }
             setLoading(false);
         };

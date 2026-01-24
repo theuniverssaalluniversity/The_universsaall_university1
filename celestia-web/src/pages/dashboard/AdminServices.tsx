@@ -8,6 +8,7 @@ interface Service {
     description: string;
     price: number;
     duration_minutes: number;
+    thumbnail_url?: string;
     type: 'reading' | 'healing';
 }
 
@@ -15,7 +16,7 @@ const AdminServices = () => {
     const [services, setServices] = useState<Service[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<Partial<Service>>({
-        title: '', description: '', price: 0, duration_minutes: 60, type: 'reading'
+        title: '', description: '', price: 0, duration_minutes: 60, type: 'reading', thumbnail_url: ''
     });
 
     useEffect(() => {
@@ -23,10 +24,8 @@ const AdminServices = () => {
     }, []);
 
     const fetchServices = async () => {
-        setLoading(true);
         const { data } = await supabase.from('services').select('*').order('created_at', { ascending: false });
         if (data) setServices(data);
-        setLoading(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -95,12 +94,27 @@ const AdminServices = () => {
                                 className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white h-24"
                             />
                         </div>
+
+                        {/* Thumbnail URL Input (New) */}
+                        <div>
+                            <label className="block text-sm text-zinc-400 mb-1">Thumbnail URL (Optional)</label>
+                            <input
+                                type="text"
+                                value={formData.thumbnail_url || ''}
+                                onChange={e => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                                placeholder="https://..."
+                                className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white"
+                            />
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm text-zinc-400 mb-1">Price ($)</label>
                                 <input
                                     type="number"
                                     required
+                                    min="0"
+                                    step="0.01"
                                     value={formData.price || 0}
                                     onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
                                     className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white"
@@ -111,6 +125,7 @@ const AdminServices = () => {
                                 <input
                                     type="number"
                                     required
+                                    min="1"
                                     value={formData.duration_minutes || 60}
                                     onChange={e => setFormData({ ...formData, duration_minutes: Number(e.target.value) })}
                                     className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white"

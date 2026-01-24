@@ -6,6 +6,7 @@ const SupportDashboard = () => {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [ticketCount, setTicketCount] = useState(0);
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -18,6 +19,15 @@ const SupportDashboard = () => {
 
             if (data) setOrders(data);
             if (error) console.error(error);
+
+            // Fetch Ticket Count
+            const { count: ticketCount } = await supabase
+                .from('support_tickets')
+                .select('id', { count: 'exact', head: true })
+                .in('status', ['open', 'in_progress']);
+
+            setTicketCount(ticketCount || 0);
+
             setLoading(false);
         };
         fetchOrders();
@@ -48,7 +58,7 @@ const SupportDashboard = () => {
                 <div className="bg-zinc-900 border border-white/5 p-6 rounded-xl flex items-center justify-between">
                     <div>
                         <h4 className="text-zinc-400 text-sm">Open Tickets</h4>
-                        <div className="text-4xl font-serif text-white mt-2">0</div>
+                        <div className="text-4xl font-serif text-white mt-2">{ticketCount}</div>
                     </div>
                     <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-500">
                         <ShoppingBag size={24} />
@@ -91,8 +101,8 @@ const SupportDashboard = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${order.status === 'completed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                    order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-                                                        'bg-red-500/10 text-red-500 border-red-500/20'
+                                                order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                                    'bg-red-500/10 text-red-500 border-red-500/20'
                                                 }`}>
                                                 {order.status === 'completed' && <CheckCircle size={10} />}
                                                 {order.status === 'pending' && <XCircle size={10} />}

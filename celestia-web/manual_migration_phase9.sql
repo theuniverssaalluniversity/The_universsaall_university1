@@ -1,12 +1,33 @@
--- Phase 9 Manual Migration File
--- Run this in Supabase SQL Editor to fix DB schema issues found during Phase 9.
+-- Phase 9 FINAL FIXES MIGRATION
+-- Run this in Supabase SQL Editor to resolve all reported issues.
 
--- 1. Add 'is_featured' to Courses (for Homepage)
+-- 1. FEATURED COURSES (Homepage)
 ALTER TABLE public.courses 
 ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
 
--- 2. Repair Progress Tracking Function
--- (Re-run this to ensure logic is correct and exists)
+-- 2. STUDENT PROGRESS FIX (RPC Function & RLS)
+create table if not exists public.completed_lessons (
+  user_id uuid references public.users(id),
+  lesson_id uuid references public.lessons(id),
+  course_id uuid references public.courses(id),
+  completed_at timestamptz default now(),
+  primary key (user_id, lesson_id),
+  unique(user_id, lesson_id)
+);
+
+alter table public.completed_lessons enable row level security;
+
+-- Policy: Users can insert their own completion
+create policy "Users can mark lessons complete"
+on public.completed_lessons for insert
+with check (auth.uid() = user_id);
+
+-- Policy: Users can view their own completion
+create policy "Users can view own completion"
+on public.completed_lessons for select
+using (auth.uid() = user_id);
+
+-- RPC Function for Progress Calculation
 create or replace function public.mark_lesson_complete(p_lesson_id uuid, p_course_id uuid)
 returns integer as $$
 declare
@@ -14,30 +35,30 @@ declare
   v_completed_lessons integer;
   v_new_progress integer;
 begin
-  -- 1. Insert into completed_lessons (ignore if exists)
+  -- Insert into completed_lessons (ignore if exists)
   insert into public.completed_lessons (user_id, lesson_id, course_id)
   values (auth.uid(), p_lesson_id, p_course_id)
   on conflict (user_id, lesson_id) do nothing;
 
-  -- 2. Count total lessons in course
+  -- Count total lessons in course
   select count(*) into v_total_lessons
   from public.lessons
   join public.modules on modules.id = lessons.module_id
   where modules.course_id = p_course_id;
 
-  -- 3. Count completed lessons for user in course
+  -- Count completed lessons for user in course
   select count(*) into v_completed_lessons
   from public.completed_lessons
   where user_id = auth.uid() and course_id = p_course_id;
 
-  -- 4. Calculate Progress
+  -- Calculate Progress
   if v_total_lessons > 0 then
     v_new_progress := (v_completed_lessons::float / v_total_lessons::float * 100)::integer;
   else
     v_new_progress := 100;
   end if;
 
-  -- 5. Update Enrollment
+  -- Update Enrollment
   update public.enrollments
   set progress_percent = v_new_progress
   where user_id = auth.uid() and course_id = p_course_id;
@@ -46,17 +67,58 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- 3. Ensure RLS allows students to view their own enrollments/progress
-ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
+-- 3. INSTRUCTOR VISIBILITY (RLS)
+-- Allow instructors to view enrollments for their own courses
+create policy "Instructors can view enrollments for their courses"
+on public.enrollments for select
+using (
+  exists (
+    select 1 from public.courses
+    where courses.id = enrollments.course_id
+    and courses.instructor_id = auth.uid()
+  )
+);
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view own enrollments') THEN
-    CREATE POLICY "Users can view own enrollments" ON public.enrollments FOR SELECT USING (auth.uid() = user_id);
-  END IF;
-END $$;
+-- Allow instructors to view order_items for their courses
+-- Adjusted for 'item_id' and 'item_type' schema
+alter table public.order_items enable row level security;
 
--- 4. Ticket Support System Tables (For Item 5)
+create policy "Instructors can view order_items for their courses"
+on public.order_items for select
+using (
+  item_type = 'course' and
+  exists (
+    select 1 from public.courses
+    where courses.id = order_items.item_id
+    and courses.instructor_id = auth.uid()
+  )
+);
+
+-- 4. SERVICES MANAGEMENT (Admin)
+alter table public.services 
+add column if not exists thumbnail_url text;
+
+alter table public.services enable row level security;
+
+create policy "Public can view services"
+on public.services for select
+using (true);
+
+create policy "Admins can manage services"
+on public.services for all
+using (
+  exists (
+    select 1 from public.users
+    where id = auth.uid()
+    and role = 'admin'
+  )
+);
+
+-- 5. SUPPORT TICKETS
+-- (Same as before, ensuring existence)
+drop type if exists ticket_status cascade;
+drop type if exists ticket_priority cascade;
+
 create type ticket_status as enum ('open', 'in_progress', 'resolved', 'closed');
 create type ticket_priority as enum ('low', 'medium', 'high', 'urgent');
 
