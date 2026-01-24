@@ -8,6 +8,9 @@ interface ServiceCategory {
     slug: string;
     type?: 'page' | 'link';
     redirect_url?: string;
+    description?: string;
+    icon_name?: string;
+    parent_id?: string;
 }
 
 interface Service {
@@ -62,10 +65,14 @@ const AdminServices = () => {
         const { error } = await supabase.from('service_categories').insert({
             title: newCategoryName,
             slug: slug,
-            type: 'page' // Default
+            type: 'page', // Default
+            sort_order: categories.length
         });
 
-        if (error) alert('Error creating category: ' + error.message);
+        if (error) {
+            console.error('Add Category Error:', error);
+            alert('Error creating category: ' + error.message);
+        }
         else {
             setNewCategoryName('');
             fetchData();
@@ -78,12 +85,27 @@ const AdminServices = () => {
         const { error } = await supabase.from('service_categories').update({
             title: editingCategory.title,
             type: editingCategory.type || 'page',
-            redirect_url: editingCategory.redirect_url
+            redirect_url: editingCategory.redirect_url,
+            description: editingCategory.description,
+            icon_name: editingCategory.icon_name,
+            parent_id: editingCategory.parent_id || null
         }).eq('id', editingCategory.id);
 
         if (error) alert('Error updating category: ' + error.message);
         else {
             setEditingCategory(null);
+            fetchData();
+        }
+    };
+
+    const handleDeleteCategory = async (id: string) => {
+        if (!confirm('Are you sure? Deleting a category will not delete the services, but they will become uncategorized.')) return;
+
+        const { error } = await supabase.from('service_categories').delete().eq('id', id);
+
+        if (error) alert('Error deleting category: ' + error.message);
+        else {
+            if (editingCategory?.id === id) setEditingCategory(null);
             fetchData();
         }
     };
@@ -165,6 +187,40 @@ const AdminServices = () => {
                                             className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
                                         />
 
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="text-xs text-zinc-500">Icon</label>
+                                                <select
+                                                    value={editingCategory.icon_name || 'Sparkles'}
+                                                    onChange={e => setEditingCategory({ ...editingCategory, icon_name: e.target.value })}
+                                                    className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
+                                                >
+                                                    <option value="Sparkles">Sparkles</option>
+                                                    <option value="Heart">Heart</option>
+                                                    <option value="Star">Star</option>
+                                                    <option value="Moon">Moon</option>
+                                                    <option value="Sun">Sun</option>
+                                                    <option value="Zap">Zap</option>
+                                                    <option value="BookOpen">BookOpen</option>
+                                                    <option value="Feather">Feather</option>
+                                                    <option value="Eye">Eye</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-zinc-500">Parent Category</label>
+                                                <select
+                                                    value={editingCategory.parent_id || ''}
+                                                    onChange={e => setEditingCategory({ ...editingCategory, parent_id: e.target.value || undefined })}
+                                                    className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
+                                                >
+                                                    <option value="">No Parent (Top Level)</option>
+                                                    {categories.filter(c => c.id !== editingCategory.id).map(c => (
+                                                        <option key={c.id} value={c.id}>{c.title}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
                                         <label className="text-xs text-zinc-500">Navigation Type</label>
                                         <select
                                             value={editingCategory.type || 'page'}
@@ -183,6 +239,15 @@ const AdminServices = () => {
                                                 className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
                                             />
                                         )}
+
+                                        <label className="text-xs text-zinc-500">Description</label>
+                                        <textarea
+                                            value={editingCategory.description || ''}
+                                            onChange={e => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                                            className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full h-16 resize-none"
+                                            placeholder="Short description..."
+                                        />
+
                                         <div className="flex gap-2 mt-2">
                                             <button onClick={handleUpdateCategory} className="px-3 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">Save Changes</button>
                                             <button onClick={() => setEditingCategory(null)} className="px-3 py-1 bg-white/5 text-zinc-400 rounded text-xs">Cancel</button>
@@ -197,9 +262,14 @@ const AdminServices = () => {
                                                     {cat.type === 'link' ? `Redirects to ${cat.redirect_url}` : `/services/${cat.slug}`}
                                                 </div>
                                             </div>
-                                            <button onClick={() => setEditingCategory(cat)} className="p-2 hover:bg-white/10 rounded-lg text-primary transition-colors">
-                                                <Edit2 size={16} />
-                                            </button>
+                                            <div className="flex gap-1">
+                                                <button onClick={() => setEditingCategory(cat)} className="p-2 hover:bg-white/10 rounded-lg text-primary transition-colors">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button onClick={() => handleDeleteCategory(cat.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-500 transition-colors">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </>
                                 )}

@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import { useCurrency } from '../../context/CurrencyContext';
-import { Menu, ShoppingBag, User } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Menu, ShoppingBag, User, ExternalLink, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 
@@ -19,22 +19,39 @@ const Navbar = () => {
         const fetchCategories = async () => {
             const { data } = await supabase
                 .from('service_categories')
-                .select('title, slug, type, redirect_url')
+                .select('id, title, slug, type, redirect_url, parent_id')
                 .order('sort_order', { ascending: true });
             if (data) setCategories(data);
         };
         fetchCategories();
     }, []);
 
-    const navLinks = [
-        { name: 'Courses', path: '/courses', isExternal: false },
-        ...categories.map(cat => ({
-            name: cat.title,
-            path: cat.type === 'link' ? cat.redirect_url : `/services/${cat.slug}`,
-            isExternal: cat.type === 'link'
-        })),
-        { name: 'Shop', path: '/shop', isExternal: false },
-    ];
+    const navLinks = useMemo(() => {
+        // Base links
+        const items: any[] = [{ name: 'Courses', path: '/courses', isExternal: false }];
+
+        // Build Tree from Categories
+        const roots = categories.filter(c => !c.parent_id);
+
+        roots.forEach(root => {
+            const children = categories.filter(c => c.parent_id === root.id).map(child => ({
+                name: child.title,
+                path: child.type === 'link' ? child.redirect_url : `/services/${child.slug}`,
+                isExternal: child.type === 'link'
+            }));
+
+            items.push({
+                name: root.title,
+                path: root.type === 'link' ? root.redirect_url : `/services/${root.slug}`,
+                isExternal: root.type === 'link',
+                children
+            });
+        });
+
+        items.push({ name: 'Shop', path: '/shop', isExternal: false });
+
+        return items;
+    }, [categories]);
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5">
@@ -56,34 +73,79 @@ const Navbar = () => {
 
                     {/* Desktop Nav */}
                     <div className="hidden md:flex items-center gap-8">
-                        {navLinks.map((link) => (
-                            link.isExternal ? (
-                                <a
-                                    key={link.name}
-                                    href={link.path}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary relative group flex items-center gap-1"
-                                >
-                                    {link.name}
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-                                </a>
-                            ) : (
-                                <Link
-                                    key={link.path}
-                                    to={link.path}
-                                    className={clsx(
-                                        "text-sm font-medium transition-colors hover:text-primary relative group",
-                                        location.pathname === link.path ? "text-primary" : "text-muted-foreground"
-                                    )}
-                                >
-                                    {link.name}
-                                    <span className={clsx(
-                                        "absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full",
-                                        location.pathname === link.path && "w-full"
-                                    )} />
-                                </Link>
-                            )
+                        {navLinks.map((link: any) => (
+                            <div key={link.name} className="relative group/menu">
+                                {link.children && link.children.length > 0 ? (
+                                    <>
+                                        <Link
+                                            to={link.path}
+                                            onClick={(e) => { if (!link.path) e.preventDefault(); }}
+                                            className={clsx(
+                                                "flex items-center gap-1.5 text-sm font-medium transition-colors py-2 group-hover/menu:text-primary",
+                                                location.pathname.startsWith(link.path) ? "text-primary" : "text-muted-foreground"
+                                            )}
+                                        >
+                                            {link.name}
+                                            <ChevronDown size={14} className="group-hover/menu:rotate-180 transition-transform duration-300" />
+                                        </Link>
+
+                                        <div className="absolute top-full left-0 w-56 pt-4 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-200 transform group-hover/menu:translate-y-0 translate-y-2 z-50">
+                                            <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 ring-1 ring-black/50 overflow-hidden">
+                                                {link.children.map((child: any) => (
+                                                    child.isExternal ? (
+                                                        <a
+                                                            key={child.name}
+                                                            href={child.path}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                        >
+                                                            {child.name}
+                                                            <ExternalLink size={12} className="opacity-50" />
+                                                        </a>
+                                                    ) : (
+                                                        <Link
+                                                            key={child.path}
+                                                            to={child.path}
+                                                            className="block px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                        >
+                                                            {child.name}
+                                                        </Link>
+                                                    )
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    link.isExternal ? (
+                                        <a
+                                            key={link.name}
+                                            href={link.path}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary relative group flex items-center gap-1"
+                                        >
+                                            {link.name}
+                                            <ExternalLink size={12} className="opacity-50" />
+                                        </a>
+                                    ) : (
+                                        <Link
+                                            key={link.path}
+                                            to={link.path}
+                                            className={clsx(
+                                                "text-sm font-medium transition-colors hover:text-primary relative group",
+                                                location.pathname === link.path ? "text-primary" : "text-muted-foreground"
+                                            )}
+                                        >
+                                            {link.name}
+                                            <span className={clsx(
+                                                "absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full",
+                                                location.pathname === link.path && "w-full"
+                                            )} />
+                                        </Link>
+                                    )
+                                )}
+                            </div>
                         ))}
                     </div>
 
