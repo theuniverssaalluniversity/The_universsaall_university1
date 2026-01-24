@@ -15,19 +15,6 @@ const LearnPage = () => {
     const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
     const [isEnrolled, setIsEnrolled] = useState(false);
 
-    const getEmbedUrl = (url: string) => {
-        if (!url) return '';
-        const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-        if (!videoIdMatch) return url;
-        const videoId = videoIdMatch[1];
-
-        // rel=0: Restrict related videos to same channel
-        // modestbranding=1: Remove logo button
-        // iv_load_policy=3: Hide annotations
-        // controls=1: Keep standard controls (Share is hard to remove without custom controls)
-        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1`;
-    };
-
     const handleMarkComplete = async (lessonId: string) => {
         if (!courseId) return;
 
@@ -56,7 +43,6 @@ const LearnPage = () => {
             setCourse(courseData);
 
             // 2. Fetch Modules & Lessons
-            // In a real app, we'd use a single query with joins, but for simplicity:
             const { data: modulesData } = await supabase
                 .from('modules')
                 .select('*, lessons(*)')
@@ -76,17 +62,30 @@ const LearnPage = () => {
                     setActiveLesson(sortedModules[0].lessons[0]);
                 }
 
-                // 3. Fetch Completed Lessons
+                // 3. Check Enrollment & Completed Lessons
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    const { data: completedData } = await supabase
-                        .from('completed_lessons')
-                        .select('lesson_id')
+                    // Check if enrolled
+                    const { data: enrollment } = await supabase
+                        .from('enrollments')
+                        .select('id')
                         .eq('user_id', user.id)
-                        .eq('course_id', courseId);
+                        .eq('course_id', courseId)
+                        .maybeSingle();
 
-                    if (completedData) {
-                        setCompletedLessons(new Set(completedData.map((c: any) => c.lesson_id)));
+                    const isUserEnrolled = !!enrollment;
+                    setIsEnrolled(isUserEnrolled);
+
+                    if (isUserEnrolled) {
+                        const { data: completedData } = await supabase
+                            .from('completed_lessons')
+                            .select('lesson_id')
+                            .eq('user_id', user.id)
+                            .eq('course_id', courseId);
+
+                        if (completedData) {
+                            setCompletedLessons(new Set(completedData.map((c: any) => c.lesson_id)));
+                        }
                     }
                 }
             }
@@ -140,10 +139,7 @@ const LearnPage = () => {
                                 </div>
                                 <div className="space-y-0.5">
                                     {module.lessons.map((lesson: any) => {
-                                        const isLocked = !lesson.is_free_preview && !isEnrolled; // Need to pass isEnrolled from parent or derived
-                                        // Wait, we don't have isEnrolled state here easily unless we check enrollment again.
-                                        // But typically LearnPage is protected or checks enrollment.
-                                        // However, for Free Preview, we allow access.
+                                        const isLocked = !lesson.is_free_preview && !isEnrolled;
 
                                         return (
                                             <button
@@ -198,7 +194,6 @@ const LearnPage = () => {
                             {activeLesson?.title || 'Course Intro'}
                         </h1>
                     </div>
-                    {/* Next Button Logic would go here */}
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-6 md:p-10 flex items-center justify-center bg-black">
@@ -248,7 +243,7 @@ const LearnPage = () => {
                                     <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto text-primary animate-pulse">
                                         <div className="w-3 h-3 bg-red-500 rounded-full absolute top-2 right-2 animate-ping" />
                                         <Menu size={32} />
-                                    </div> {/* Using Menu as generic icon placeholder, should probably use Video or Radio */}
+                                    </div>
 
                                     <div>
                                         <h2 className="text-2xl font-bold text-white mb-2">Live Class Session</h2>
@@ -285,7 +280,7 @@ const LearnPage = () => {
                             {activeLesson.content_type === 'pdf' && (
                                 <div className="bg-zinc-900 border border-white/10 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-6">
                                     <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-zinc-400">
-                                        <Menu size={32} /> {/* Placeholder for FileText */}
+                                        <Menu size={32} />
                                     </div>
                                     <div>
                                         <h3 className="text-xl font-bold text-white">Course Material</h3>
@@ -305,7 +300,7 @@ const LearnPage = () => {
                                 </div>
                             )}
 
-                            {/* TEXT Content (Always shown if present, below video/live) */}
+                            {/* TEXT Content */}
                             <div className="prose prose-invert max-w-none">
                                 <h1 className="text-3xl font-serif text-white mb-4">{activeLesson.title}</h1>
                                 {activeLesson.text_content && (
