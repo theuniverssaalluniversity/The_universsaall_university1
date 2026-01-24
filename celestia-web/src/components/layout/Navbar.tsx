@@ -2,21 +2,38 @@ import { Link, useLocation } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { Menu, ShoppingBag, User } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
+
+import { supabase } from '../../utils/supabase';
 
 const Navbar = () => {
     const config = useConfig();
     const { currency, setCurrency } = useCurrency();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const { data } = await supabase
+                .from('service_categories')
+                .select('title, slug, type, redirect_url')
+                .order('sort_order', { ascending: true });
+            if (data) setCategories(data);
+        };
+        fetchCategories();
+    }, []);
 
     const navLinks = [
-        { name: 'Courses', path: '/courses' },
-        { name: 'Readings', path: '/readings' },
-        { name: 'Healings', path: '/healings' },
-        { name: 'Shop', path: '/shop' },
+        { name: 'Courses', path: '/courses', isExternal: false },
+        ...categories.map(cat => ({
+            name: cat.title,
+            path: cat.type === 'link' ? cat.redirect_url : `/services/${cat.slug}`,
+            isExternal: cat.type === 'link'
+        })),
+        { name: 'Shop', path: '/shop', isExternal: false },
     ];
 
     return (
@@ -40,20 +57,33 @@ const Navbar = () => {
                     {/* Desktop Nav */}
                     <div className="hidden md:flex items-center gap-8">
                         {navLinks.map((link) => (
-                            <Link
-                                key={link.path}
-                                to={link.path}
-                                className={clsx(
-                                    "text-sm font-medium transition-colors hover:text-primary relative group",
-                                    location.pathname === link.path ? "text-primary" : "text-muted-foreground"
-                                )}
-                            >
-                                {link.name}
-                                <span className={clsx(
-                                    "absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full",
-                                    location.pathname === link.path && "w-full"
-                                )} />
-                            </Link>
+                            link.isExternal ? (
+                                <a
+                                    key={link.name}
+                                    href={link.path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary relative group flex items-center gap-1"
+                                >
+                                    {link.name}
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                                </a>
+                            ) : (
+                                <Link
+                                    key={link.path}
+                                    to={link.path}
+                                    className={clsx(
+                                        "text-sm font-medium transition-colors hover:text-primary relative group",
+                                        location.pathname === link.path ? "text-primary" : "text-muted-foreground"
+                                    )}
+                                >
+                                    {link.name}
+                                    <span className={clsx(
+                                        "absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full",
+                                        location.pathname === link.path && "w-full"
+                                    )} />
+                                </Link>
+                            )
                         ))}
                     </div>
 

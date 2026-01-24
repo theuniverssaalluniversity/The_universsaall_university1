@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Plus, Trash2, Edit2, Sparkles, Settings, ExternalLink, Heart } from 'lucide-react';
+import { Plus, Trash2, Edit2, Sparkles, Settings, ExternalLink } from 'lucide-react';
 
 interface ServiceCategory {
     id: string;
     title: string;
     slug: string;
+    type?: 'page' | 'link';
+    redirect_url?: string;
 }
 
 interface Service {
@@ -27,11 +29,12 @@ const AdminServices = () => {
     const [services, setServices] = useState<Service[]>([]);
     const [categories, setCategories] = useState<ServiceCategory[]>([]);
     const [isEditing, setIsEditing] = useState(false);
-    const [loading, setLoading] = useState(true);
+    // const [loading, setLoading] = useState(true);
 
     // Category Management
     const [isManageCategories, setIsManageCategories] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [editingCategory, setEditingCategory] = useState<Partial<ServiceCategory> | null>(null);
 
     const [formData, setFormData] = useState<Partial<Service>>({
         title: '', description: '', price: 0, price_inr: 0, duration_minutes: 60, thumbnail_url: '',
@@ -43,13 +46,13 @@ const AdminServices = () => {
     }, []);
 
     const fetchData = async () => {
-        setLoading(true);
+        // setLoading(true);
         const { data: servicesData } = await supabase.from('services').select('*').order('created_at', { ascending: false });
         const { data: categoriesData } = await supabase.from('service_categories').select('*').order('sort_order');
 
         if (servicesData) setServices(servicesData);
         if (categoriesData) setCategories(categoriesData);
-        setLoading(false);
+        // setLoading(false);
     };
 
     const handleAddCategory = async () => {
@@ -58,12 +61,29 @@ const AdminServices = () => {
 
         const { error } = await supabase.from('service_categories').insert({
             title: newCategoryName,
-            slug: slug
+            slug: slug,
+            type: 'page' // Default
         });
 
         if (error) alert('Error creating category: ' + error.message);
         else {
             setNewCategoryName('');
+            fetchData();
+        }
+    };
+
+    const handleUpdateCategory = async () => {
+        if (!editingCategory || !editingCategory.id) return;
+
+        const { error } = await supabase.from('service_categories').update({
+            title: editingCategory.title,
+            type: editingCategory.type || 'page',
+            redirect_url: editingCategory.redirect_url
+        }).eq('id', editingCategory.id);
+
+        if (error) alert('Error updating category: ' + error.message);
+        else {
+            setEditingCategory(null);
             fetchData();
         }
     };
@@ -118,22 +138,72 @@ const AdminServices = () => {
 
             {/* Category Manager */}
             {isManageCategories && (
-                <div className="bg-zinc-900 border border-white/10 p-6 rounded-xl animate-fade-in">
-                    <h3 className="text-lg font-medium text-white mb-4">Manage Service Categories</h3>
-                    <div className="flex gap-4 mb-4">
+                <div className="bg-zinc-900 border border-white/10 p-6 rounded-xl animate-fade-in mb-6">
+                    <h3 className="text-lg font-medium text-white mb-4">Manage Service Categories (Navbar Items)</h3>
+
+                    {/* Add New */}
+                    <div className="flex gap-4 mb-6 pb-6 border-b border-white/5">
                         <input
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
-                            placeholder="New Category Name (e.g. 'Astrology Reports')"
+                            placeholder="New Category Name (e.g. Workshops)"
                             className="flex-1 bg-black border border-white/10 rounded-lg px-4 py-2 text-white"
                         />
                         <button onClick={handleAddCategory} className="bg-primary text-black px-4 py-2 rounded-lg font-bold">Add</button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+
+                    {/* Edit Existing */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {categories.map(cat => (
-                            <span key={cat.id} className="px-3 py-1 bg-zinc-800 rounded-full text-zinc-300 text-sm border border-white/5">
-                                {cat.title}
-                            </span>
+                            <div key={cat.id} className="bg-black/40 border border-white/5 p-4 rounded-lg flex flex-col gap-3">
+                                {editingCategory?.id === cat.id ? (
+                                    <>
+                                        <label className="text-xs text-zinc-500">Title</label>
+                                        <input
+                                            value={editingCategory.title}
+                                            onChange={e => setEditingCategory({ ...editingCategory, title: e.target.value })}
+                                            className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
+                                        />
+
+                                        <label className="text-xs text-zinc-500">Navigation Type</label>
+                                        <select
+                                            value={editingCategory.type || 'page'}
+                                            onChange={e => setEditingCategory({ ...editingCategory, type: e.target.value as any })}
+                                            className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
+                                        >
+                                            <option value="page">Internal Page (/services/{cat.slug})</option>
+                                            <option value="link">External Link (Redirect)</option>
+                                        </select>
+
+                                        {editingCategory.type === 'link' && (
+                                            <input
+                                                value={editingCategory.redirect_url || ''}
+                                                onChange={e => setEditingCategory({ ...editingCategory, redirect_url: e.target.value })}
+                                                placeholder="https://example.com"
+                                                className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
+                                            />
+                                        )}
+                                        <div className="flex gap-2 mt-2">
+                                            <button onClick={handleUpdateCategory} className="px-3 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">Save Changes</button>
+                                            <button onClick={() => setEditingCategory(null)} className="px-3 py-1 bg-white/5 text-zinc-400 rounded text-xs">Cancel</button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-medium text-white">{cat.title}</div>
+                                                <div className="text-xs text-zinc-500 mt-1">
+                                                    {cat.type === 'link' ? `Redirects to ${cat.redirect_url}` : `/services/${cat.slug}`}
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setEditingCategory(cat)} className="p-2 hover:bg-white/10 rounded-lg text-primary transition-colors">
+                                                <Edit2 size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>
