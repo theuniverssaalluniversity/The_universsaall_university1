@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCart } from '../context/CartContext';
+import { Link } from 'react-router-dom';
 
 interface Product {
     id: string;
@@ -15,6 +17,7 @@ interface Product {
 const ShopPage = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const { addItem } = useCart();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -29,6 +32,20 @@ const ShopPage = () => {
         };
         fetchProducts();
     }, []);
+
+    const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+        e.preventDefault(); // Prevent navigation if clicking the button (though here it's inside a div, better safe)
+        addItem({
+            itemId: product.id,
+            title: product.title,
+            price: product.price,
+            // price_inr: product.price_inr, // Add this if available in Product interface, likely needed for consistency
+            type: 'product',
+            quantity: 1,
+            image: product.image_url
+        });
+        alert('Added to cart!');
+    };
 
     return (
         <div className="min-h-screen pt-20 pb-12">
@@ -72,29 +89,36 @@ const ShopPage = () => {
                                 transition={{ delay: idx * 0.1 }}
                                 className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all flex flex-col"
                             >
-                                <div className="aspect-square bg-zinc-800 relative overflow-hidden">
-                                    {product.image_url ? (
-                                        <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                                            <ShoppingBag size={32} />
-                                        </div>
-                                    )}
-                                    {product.is_digital && (
-                                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs text-white font-medium">
-                                            Digital
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-6 flex flex-col flex-1">
-                                    <h3 className="text-lg font-medium text-white mb-2 line-clamp-1">{product.title}</h3>
-                                    <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{product.description}</p>
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <span className="text-xl font-bold text-white">${product.price}</span>
-                                        <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-colors">
-                                            <ShoppingBag size={18} />
-                                        </button>
+                                {/* Link wrapper for the image/title part */}
+                                <Link to={`/shop/${product.id}`} className="block">
+                                    <div className="aspect-square bg-zinc-800 relative overflow-hidden">
+                                        {product.image_url ? (
+                                            <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                                                <ShoppingBag size={32} />
+                                            </div>
+                                        )}
+                                        {product.is_digital && (
+                                            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs text-white font-medium">
+                                                Digital
+                                            </div>
+                                        )}
                                     </div>
+                                    <div className="p-6 pb-0 flex flex-col flex-1">
+                                        <h3 className="text-lg font-medium text-white mb-2 line-clamp-1">{product.title}</h3>
+                                        <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{product.description}</p>
+                                    </div>
+                                </Link>
+
+                                <div className="px-6 pb-6 mt-auto flex items-center justify-between">
+                                    <span className="text-xl font-bold text-white">${product.price}</span>
+                                    <button
+                                        onClick={(e) => handleAddToCart(e, product)}
+                                        className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-colors"
+                                    >
+                                        <ShoppingBag size={18} />
+                                    </button>
                                 </div>
                             </motion.div>
                         ))}
