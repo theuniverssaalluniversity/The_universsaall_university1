@@ -108,6 +108,8 @@ const LandingPage = () => {
                     </div>
                 </div>
             </section>
+
+            <FeaturedProductsGrid />
         </div>
     );
 };
@@ -197,6 +199,93 @@ const FeaturedCoursesGrid = () => {
                 </Link>
             ))}
         </div>
+    );
+};
+
+// NEW: Featured Products Component (Shop)
+import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { ShoppingBag } from 'lucide-react';
+
+const FeaturedProductsGrid = () => {
+    const [products, setProducts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { addItem } = useCart();
+    const { formatPrice } = useCurrency();
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            const { data } = await supabase
+                .from('products')
+                .select('*')
+                .limit(3)
+                .order('created_at', { ascending: false });
+
+            if (data) setProducts(data);
+            setLoading(false);
+        };
+        fetchProducts();
+    }, []);
+
+    const handleAddToCart = (e: any, product: any) => {
+        e.preventDefault(); // Prevent navigation if wrapped in Link
+        addItem({
+            itemId: product.id,
+            title: product.title,
+            price: product.price,
+            price_inr: product.price_inr,
+            type: 'product',
+            quantity: 1
+        });
+        alert('Added to cart!');
+    };
+
+    if (loading) return <div className="text-zinc-500">Loading shop items...</div>;
+
+    if (products.length === 0) return null; // Don't show if empty
+
+    return (
+        <section className="py-24 relative overflow-hidden bg-zinc-900/20 md:border-t md:border-white/5">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-end mb-12">
+                    <div>
+                        <h2 className="text-4xl md:text-5xl font-serif text-white mb-4">Cosmic Shop</h2>
+                        <p className="text-zinc-400">Tools for your spiritual journey.</p>
+                    </div>
+                    <Link to="/shop" className="hidden md:flex items-center text-primary hover:text-accent transition-colors gap-2">
+                        View All Products <ArrowRight size={16} />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {products.map((product) => (
+                        <Link key={product.id} to={product.slug ? `/shop/${product.slug}` : `/shop`} className="group block bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all">
+                            <div className="aspect-square bg-zinc-800 relative overflow-hidden">
+                                {product.image_url ? (
+                                    <img src={product.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={product.title} />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-zinc-700">No Image</div>
+                                )}
+                            </div>
+                            <div className="p-6">
+                                <h3 className="text-xl font-medium text-white mb-2">{product.title}</h3>
+                                <div className="flex justify-between items-center mt-4">
+                                    <span className="text-primary font-bold text-lg">
+                                        {formatPrice(product.price, product.price_inr)}
+                                    </span>
+                                    <button
+                                        onClick={(e) => handleAddToCart(e, product)}
+                                        className="p-3 bg-white text-black rounded-full hover:bg-primary transition-colors z-10"
+                                    >
+                                        <ShoppingBag size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        </section>
     );
 };
 

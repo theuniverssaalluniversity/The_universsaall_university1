@@ -24,6 +24,7 @@ interface Service {
     category_id?: string;
     display_mode?: 'content' | 'redirect';
     redirect_url?: string;
+    is_visible?: boolean; // Visibility Flag
     // Legacy type support for display only
     type?: string;
 }
@@ -37,11 +38,11 @@ const AdminServices = () => {
     // Category Management
     const [isManageCategories, setIsManageCategories] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
-    const [editingCategory, setEditingCategory] = useState<Partial<ServiceCategory> | null>(null);
+    const [editingCategory, setEditingCategory] = useState<Partial<ServiceCategory> & { is_visible?: boolean } | null>(null);
 
     const [formData, setFormData] = useState<Partial<Service>>({
         title: '', description: '', price: 0, price_inr: 0, duration_minutes: 60, thumbnail_url: '',
-        display_mode: 'content', redirect_url: ''
+        display_mode: 'content', redirect_url: '', is_visible: true
     });
 
     useEffect(() => {
@@ -66,7 +67,8 @@ const AdminServices = () => {
             title: newCategoryName,
             slug: slug,
             type: 'page', // Default
-            sort_order: categories.length
+            sort_order: categories.length,
+            is_visible: true
         });
 
         if (error) {
@@ -88,7 +90,8 @@ const AdminServices = () => {
             redirect_url: editingCategory.redirect_url,
             description: editingCategory.description,
             icon_name: editingCategory.icon_name,
-            parent_id: editingCategory.parent_id || null
+            parent_id: editingCategory.parent_id || null,
+            is_visible: editingCategory.is_visible
         }).eq('id', editingCategory.id);
 
         if (error) alert('Error updating category: ' + error.message);
@@ -124,7 +127,7 @@ const AdminServices = () => {
             setIsEditing(false);
             setFormData({
                 title: '', description: '', price: 0, price_inr: 0, duration_minutes: 60, thumbnail_url: '',
-                display_mode: 'content', redirect_url: ''
+                display_mode: 'content', redirect_url: '', is_visible: true
             });
             fetchData();
         } else {
@@ -140,6 +143,7 @@ const AdminServices = () => {
 
     return (
         <div className="space-y-8">
+            {/* Header ... */}
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-serif text-white">Services Management</h1>
                 <div className="flex gap-3">
@@ -150,7 +154,7 @@ const AdminServices = () => {
                         <Settings size={18} /> Categories
                     </button>
                     <button
-                        onClick={() => { setIsEditing(true); setFormData({ category_id: categories[0]?.id || '', display_mode: 'content' }); }}
+                        onClick={() => { setIsEditing(true); setFormData({ category_id: categories[0]?.id || '', display_mode: 'content', is_visible: true }); }}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg font-bold hover:bg-primary/90 transition-colors"
                     >
                         <Plus size={18} /> Add Service
@@ -177,7 +181,7 @@ const AdminServices = () => {
                     {/* Edit Existing */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {categories.map(cat => (
-                            <div key={cat.id} className="bg-black/40 border border-white/5 p-4 rounded-lg flex flex-col gap-3">
+                            <div key={cat.id} className={`border p-4 rounded-lg flex flex-col gap-3 ${((cat as any).is_visible === false) ? 'bg-red-900/10 border-red-500/30' : 'bg-black/40 border-white/5'}`}>
                                 {editingCategory?.id === cat.id ? (
                                     <>
                                         <label className="text-xs text-zinc-500">Title</label>
@@ -188,6 +192,7 @@ const AdminServices = () => {
                                         />
 
                                         <div className="grid grid-cols-2 gap-2">
+                                            {/* (Icon and Parent selectors remain same) */}
                                             <div>
                                                 <label className="text-xs text-zinc-500">Icon</label>
                                                 <select
@@ -196,6 +201,7 @@ const AdminServices = () => {
                                                     className="bg-zinc-800 border border-white/10 rounded px-2 py-1 text-white text-sm w-full"
                                                 >
                                                     <option value="Sparkles">Sparkles</option>
+                                                    {/* ... options ... */}
                                                     <option value="Heart">Heart</option>
                                                     <option value="Star">Star</option>
                                                     <option value="Moon">Moon</option>
@@ -207,7 +213,7 @@ const AdminServices = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="text-xs text-zinc-500">Parent Category</label>
+                                                <label className="text-xs text-zinc-500">Parent Parent</label>
                                                 <select
                                                     value={editingCategory.parent_id || ''}
                                                     onChange={e => setEditingCategory({ ...editingCategory, parent_id: e.target.value || undefined })}
@@ -221,6 +227,17 @@ const AdminServices = () => {
                                             </div>
                                         </div>
 
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <input
+                                                type="checkbox"
+                                                id={`vis-${cat.id}`}
+                                                checked={editingCategory.is_visible !== false}
+                                                onChange={e => setEditingCategory({ ...editingCategory, is_visible: e.target.checked })}
+                                            />
+                                            <label htmlFor={`vis-${cat.id}`} className="text-xs text-zinc-400">Show on Student Dashboard</label>
+                                        </div>
+
+                                        {/* ... (Rest for navigation type etc) */}
                                         <label className="text-xs text-zinc-500">Navigation Type</label>
                                         <select
                                             value={editingCategory.type || 'page'}
@@ -257,7 +274,10 @@ const AdminServices = () => {
                                     <>
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <div className="font-medium text-white">{cat.title}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="font-medium text-white">{cat.title}</div>
+                                                    {(cat as any).is_visible === false && <span className="bg-red-500/20 text-red-500 text-[10px] px-1 rounded">HIDDEN</span>}
+                                                </div>
                                                 <div className="text-xs text-zinc-500 mt-1">
                                                     {cat.type === 'link' ? `Redirects to ${cat.redirect_url}` : `/services/${cat.slug}`}
                                                 </div>
@@ -283,7 +303,9 @@ const AdminServices = () => {
                 <div className="bg-zinc-900 border border-white/10 p-6 rounded-xl mb-6">
                     <h2 className="text-xl font-medium text-white mb-4">{formData.id ? 'Edit Service' : 'New Service'}</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Service Form logic ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* ... Title and Category Inputs ... */}
                             <div>
                                 <label className="block text-sm text-zinc-400 mb-1">Title</label>
                                 <input
@@ -307,6 +329,7 @@ const AdminServices = () => {
                                     ))}
                                 </select>
                             </div>
+                            {/* ... */}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -392,6 +415,17 @@ const AdminServices = () => {
                             </div>
                         </div>
 
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="svc-visible"
+                                checked={formData.is_visible !== false}
+                                onChange={e => setFormData({ ...formData, is_visible: e.target.checked })}
+                                className="w-4 h-4 rounded border-zinc-700 bg-black text-primary"
+                            />
+                            <label htmlFor="svc-visible" className="text-zinc-400 cursor-pointer select-none">Show on Student Dashboard</label>
+                        </div>
+
                         <div className="flex justify-end gap-2">
                             <button
                                 type="button"
@@ -410,6 +444,7 @@ const AdminServices = () => {
                     </form>
                 </div>
             )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {services.map(service => {

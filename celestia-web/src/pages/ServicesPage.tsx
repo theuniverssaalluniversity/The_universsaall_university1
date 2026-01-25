@@ -78,9 +78,9 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
                 itemId: service.id,
                 title: service.title,
                 price: service.price,
+                price_inr: service.price_inr,
                 type: 'service',
                 quantity: 1,
-                image: undefined
             });
             // Cart opens automatically in addItem
         }

@@ -8,6 +8,7 @@ export interface CartItem {
     type: CartItemType;
     title: string;
     price: number;
+    price_inr?: number;
     image?: string;
     quantity: number; // For products (courses/services usually qty 1)
     description?: string;

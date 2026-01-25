@@ -5,7 +5,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { supabase } from '../utils/supabase';
 import {
     LayoutDashboard, BookOpen, Users, ShoppingBag,
-    Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, Sparkles
+    Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, Sparkles, ExternalLink
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -33,11 +33,44 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         navigate('/login');
     };
 
-    const menuItems = {
+    const [dynamicMenuItems, setDynamicMenuItems] = useState<any[]>([]);
+
+    // Icon map for dynamic categories
+    const IconMap: any = {
+        LayoutDashboard, BookOpen, Users, ShoppingBag, Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, Sparkles
+    };
+
+    useEffect(() => {
+        const fetchDynamicMenu = async () => {
+            // Only fetch for students or relevant roles if needed. 
+            // Requirement implies "User (Student) Dashboard".
+            if (role === 'student' || role === 'admin') {
+                const { data } = await supabase
+                    .from('service_categories')
+                    .select('*')
+                    .eq('is_visible', true) // Only show visible items
+                    .order('sort_order', { ascending: true });
+
+                if (data) {
+                    const dynamic = data.map(cat => ({
+                        name: cat.title,
+                        icon: IconMap[cat.icon_name || 'Sparkles'] || Sparkles,
+                        path: cat.type === 'link' ? cat.redirect_url : `/services/${cat.slug}`,
+                        isExternal: cat.type === 'link'
+                    }));
+                    setDynamicMenuItems(dynamic);
+                }
+            }
+        };
+        fetchDynamicMenu();
+    }, [role]);
+
+    const baseMenuItems = {
         student: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/student' },
             { name: 'My Courses', icon: BookOpen, path: '/student/courses' },
             { name: 'My Orders', icon: ShoppingBag, path: '/student/orders' },
+            { name: 'Shop', icon: Tag, path: '/shop' }, // Added Shop Link explicitly
             { name: 'Support', icon: HelpCircle, path: '/student/support' },
         ],
         instructor: [
@@ -52,12 +85,11 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
             { name: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
             { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
             { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
-            { name: 'Enrollments', icon: Users, path: '/admin/enrollments' }, // Fixed redirect bug
+            { name: 'Enrollments', icon: Users, path: '/admin/enrollments' },
             { name: 'Revenue', icon: ShoppingBag, path: '/admin/revenue' },
             { name: 'Services', icon: Sparkles, path: '/admin/services' },
             { name: 'Shop Products', icon: Tag, path: '/admin/shop' },
             { name: 'Coupons', icon: Tag, path: '/admin/coupons' },
-            // { name: 'Logs', icon: Shield, path: '/admin/logs' },
             { name: 'Settings', icon: Settings, path: '/admin/settings' },
         ],
         support: [
@@ -68,7 +100,15 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         ]
     };
 
-    const currentMenu = menuItems[role] || menuItems.student;
+    // Merge Dynamic Items (Specifically for Student)
+    let currentMenu = baseMenuItems[role] || baseMenuItems.student;
+
+    if (role === 'student' && dynamicMenuItems.length > 0) {
+        // Insert dynamic items before 'Support' (which is usually last)
+        const lastItem = currentMenu[currentMenu.length - 1]; // Support
+        const mainItems = currentMenu.slice(0, currentMenu.length - 1);
+        currentMenu = [...mainItems, ...dynamicMenuItems, lastItem];
+    }
 
     return (
         <div className="min-h-screen bg-background flex text-white font-sans">
@@ -92,32 +132,53 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
                     </span>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2">
-                    {currentMenu.map((item) => (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={clsx(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group",
-                                location.pathname === item.path
-                                    ? "bg-primary text-black font-medium"
-                                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                            )}
-                        >
-                            <item.icon size={20} />
-                            <span className={clsx(
-                                "transition-opacity duration-300",
-                                !isSidebarOpen && "md:hidden lg:block lg:opacity-100"
-                            )}>
-                                {item.name}
-                            </span>
-                            {/* Tooltip for collapsed mode */}
-                            {!isSidebarOpen && !isMobile && (
-                                <div className="absolute left-16 bg-zinc-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap md:block lg:hidden pointer-events-none z-50">
+                <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+                    {currentMenu.map((item: any) => (
+                        item.isExternal ? (
+                            <a
+                                key={item.path}
+                                href={item.path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={clsx(
+                                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group text-zinc-400 hover:bg-white/5 hover:text-white"
+                                )}
+                            >
+                                <item.icon size={20} />
+                                <span className={clsx(
+                                    "transition-opacity duration-300",
+                                    !isSidebarOpen && "md:hidden lg:block lg:opacity-100"
+                                )}>
                                     {item.name}
-                                </div>
-                            )}
-                        </Link>
+                                </span>
+                                <ExternalLink size={12} className={clsx("ml-auto opacity-50", !isSidebarOpen && "hidden")} />
+                            </a>
+                        ) : (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={clsx(
+                                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group",
+                                    location.pathname === item.path
+                                        ? "bg-primary text-black font-medium"
+                                        : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                )}
+                            >
+                                <item.icon size={20} />
+                                <span className={clsx(
+                                    "transition-opacity duration-300",
+                                    !isSidebarOpen && "md:hidden lg:block lg:opacity-100"
+                                )}>
+                                    {item.name}
+                                </span>
+                                {/* Tooltip for collapsed mode */}
+                                {!isSidebarOpen && !isMobile && (
+                                    <div className="absolute left-16 bg-zinc-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap md:block lg:hidden pointer-events-none z-50">
+                                        {item.name}
+                                    </div>
+                                )}
+                            </Link>
+                        )
                     ))}
                 </nav>
 

@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { Menu, ShoppingBag, User, ExternalLink, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +12,7 @@ import { supabase } from '../../utils/supabase';
 
 const Navbar = () => {
     const config = useConfig();
+    const { user, role } = useAuth();
     const { currency, setCurrency } = useCurrency();
     const { toggleCart, items } = useCart();
     const location = useLocation();
@@ -172,10 +174,18 @@ const Navbar = () => {
                                 </span>
                             )}
                         </button>
-                        <Link to="/login" className="px-5 py-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/50 text-sm font-medium transition-all hover:bg-white/10 flex items-center gap-2">
-                            <User size={16} />
-                            <span>Login</span>
-                        </Link>
+
+                        {user ? (
+                            <Link to={`/${role || 'student'}`} className="px-5 py-2 rounded-full bg-primary text-black text-sm font-medium transition-all hover:bg-primary/90 flex items-center gap-2">
+                                <User size={16} />
+                                <span>Dashboard</span>
+                            </Link>
+                        ) : (
+                            <Link to="/login" className="px-5 py-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/50 text-sm font-medium transition-all hover:bg-white/10 flex items-center gap-2">
+                                <User size={16} />
+                                <span>Login</span>
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile Menu Button */}
