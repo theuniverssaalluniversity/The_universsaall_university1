@@ -4,6 +4,7 @@ import { supabase } from '../utils/supabase';
 import { Clock, Calendar, ArrowRight, Sparkles, Heart, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCurrency } from '../context/CurrencyContext';
+import { useCart } from '../context/CartContext';
 
 interface Service {
     id: string;
@@ -33,6 +34,7 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
     const slug = propSlug || paramSlug || 'reading';
 
     const { formatPrice } = useCurrency();
+    const { addItem } = useCart();
     const [services, setServices] = useState<Service[]>([]);
     const [category, setCategory] = useState<Category | null>(null);
     const [loading, setLoading] = useState(true);
@@ -72,9 +74,15 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
         if (service.display_mode === 'redirect' && service.redirect_url) {
             window.location.href = service.redirect_url;
         } else {
-            // Internal booking flow (Cart or Booking Page)
-            // For now, simple alert or navigate
-            alert('Booking flow coming soon!');
+            addItem({
+                itemId: service.id,
+                title: service.title,
+                price: service.price,
+                type: 'service',
+                quantity: 1,
+                image: undefined
+            });
+            // Cart opens automatically in addItem
         }
     };
 

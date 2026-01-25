@@ -49,6 +49,7 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         ],
         admin: [
             { name: 'Overview', icon: LayoutDashboard, path: '/admin' },
+            { name: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
             { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
             { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
             { name: 'Enrollments', icon: Users, path: '/admin/enrollments' }, // Fixed redirect bug

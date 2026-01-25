@@ -42,6 +42,13 @@ const TicketListPage = () => {
         setLoading(false);
     };
 
+    const filteredTickets = tickets.filter(ticket => {
+        if (filter === 'all') return true;
+        if (filter === 'open') return ticket.status !== 'closed'; // Active tickets
+        if (filter === 'closed') return ticket.status === 'closed';
+        return true;
+    });
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'open': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
@@ -53,7 +60,7 @@ const TicketListPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h1 className="text-2xl font-serif text-white flex items-center gap-3">
                     <MessageSquare className="text-primary" /> Support Tickets
                 </h1>
@@ -62,16 +69,34 @@ const TicketListPage = () => {
                 </Link>
             </div>
 
+            {/* Filters */}
+            <div className="flex gap-2 border-b border-white/5 pb-1">
+                {(['all', 'open', 'closed'] as const).map((f) => (
+                    <button
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors relative ${filter === f
+                                ? 'text-primary border-b-2 border-primary bg-primary/5'
+                                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                ))}
+            </div>
+
             {loading ? (
                 <div className="text-center py-8 text-zinc-500">Loading tickets...</div>
-            ) : tickets.length === 0 ? (
+            ) : filteredTickets.length === 0 ? (
                 <div className="text-center py-12 border border-dashed border-zinc-800 rounded-xl">
-                    <p className="text-zinc-500 mb-4">No support tickets found.</p>
+                    <p className="text-zinc-500 mb-4">
+                        {filter === 'all' ? 'No support tickets found.' : `No ${filter} tickets found.`}
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {tickets.map((ticket) => (
-                        <div key={ticket.id} className="bg-zinc-900 border border-white/5 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {filteredTickets.map((ticket) => (
+                        <div key={ticket.id} className="bg-zinc-900 border border-white/5 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/10 transition-colors">
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
                                     <span className={`px-2 py-0.5 rounded text-xs font-medium border uppercase ${getStatusColor(ticket.status)}`}>

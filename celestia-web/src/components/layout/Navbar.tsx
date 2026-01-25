@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useCart } from '../../context/CartContext';
 import { Menu, ShoppingBag, User, ExternalLink, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +12,7 @@ import { supabase } from '../../utils/supabase';
 const Navbar = () => {
     const config = useConfig();
     const { currency, setCurrency } = useCurrency();
+    const { toggleCart, items } = useCart();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
@@ -159,9 +161,17 @@ const Navbar = () => {
                             <span className="w-px h-3 bg-white/10"></span>
                             <span className={currency === 'INR' ? 'text-primary' : 'text-zinc-500'}>₹</span>
                         </button>
-                        <Link to="/cart" className="p-2 text-muted-foreground hover:text-primary transition-colors">
+                        <button
+                            onClick={toggleCart}
+                            className="p-2 text-muted-foreground hover:text-primary transition-colors relative"
+                        >
                             <ShoppingBag size={20} />
-                        </Link>
+                            {items.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-[10px] text-black font-bold flex items-center justify-center rounded-full">
+                                    {items.length}
+                                </span>
+                            )}
+                        </button>
                         <Link to="/login" className="px-5 py-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/50 text-sm font-medium transition-all hover:bg-white/10 flex items-center gap-2">
                             <User size={16} />
                             <span>Login</span>
