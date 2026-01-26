@@ -3,6 +3,7 @@ import { supabase } from '../utils/supabase';
 import { ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext'; // Added
 import { Link } from 'react-router-dom';
 
 interface Product {
@@ -10,14 +11,17 @@ interface Product {
     title: string;
     description: string;
     price: number;
+    price_inr?: number; // Added
     image_url: string;
     is_digital: boolean;
+    slug?: string; // Added
 }
 
 const ShopPage = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const { addItem } = useCart();
+    const { formatPrice } = useCurrency(); // Added
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -34,12 +38,12 @@ const ShopPage = () => {
     }, []);
 
     const handleAddToCart = (e: React.MouseEvent, product: Product) => {
-        e.preventDefault(); // Prevent navigation if clicking the button (though here it's inside a div, better safe)
+        e.preventDefault();
         addItem({
             itemId: product.id,
             title: product.title,
             price: product.price,
-            // price_inr: product.price_inr, // Add this if available in Product interface, likely needed for consistency
+            price_inr: product.price_inr, // Added
             type: 'product',
             quantity: 1,
             image: product.image_url
@@ -89,8 +93,8 @@ const ShopPage = () => {
                                 transition={{ delay: idx * 0.1 }}
                                 className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all flex flex-col"
                             >
-                                {/* Link wrapper for the image/title part */}
-                                <Link to={`/shop/${product.id}`} className="block">
+                                {/* Link wrapper using slug if available */}
+                                <Link to={`/shop/${product.slug || product.id}`} className="block">
                                     <div className="aspect-square bg-zinc-800 relative overflow-hidden">
                                         {product.image_url ? (
                                             <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -112,7 +116,9 @@ const ShopPage = () => {
                                 </Link>
 
                                 <div className="px-6 pb-6 mt-auto flex items-center justify-between">
-                                    <span className="text-xl font-bold text-white">${product.price}</span>
+                                    <span className="text-xl font-bold text-white">
+                                        {formatPrice(product.price, product.price_inr)}
+                                    </span>
                                     <button
                                         onClick={(e) => handleAddToCart(e, product)}
                                         className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-colors"
