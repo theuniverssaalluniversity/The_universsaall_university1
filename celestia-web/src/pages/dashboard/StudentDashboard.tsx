@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { BookOpen, CheckCircle, Award } from 'lucide-react'; // Changed icons
+import { BookOpen, CheckCircle, Award, Sparkles, LayoutDashboard, Users, ShoppingBag, Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const StudentDashboard = () => {
     const [courses, setCourses] = useState<any[]>([]);
+    const [services, setServices] = useState<any[]>([]); // New state for services
     const [stats, setStats] = useState({
         lessonsLearned: 0,
         certificates: 0,
@@ -12,13 +13,27 @@ const StudentDashboard = () => {
     });
     const [loading, setLoading] = useState(true);
 
+    // Icon map for dynamic categories
+    const IconMap: any = {
+        LayoutDashboard, BookOpen, Users, ShoppingBag, Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, Sparkles
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // 1. Fetch Enrollments & Courses
+            // 1. Fetch Services (New)
+            const { data: serviceData } = await supabase
+                .from('service_categories')
+                .select('*')
+                .eq('is_visible', true)
+                .order('sort_order', { ascending: true });
+
+            if (serviceData) setServices(serviceData);
+
+            // 2. Fetch Enrollments & Courses
             const { data: enrollmentData } = await supabase
                 .from('enrollments')
                 .select('*, courses(*)')
@@ -31,7 +46,7 @@ const StudentDashboard = () => {
                 const completedCourses = enrollmentData.filter(e => e.progress_percent === 100).length;
                 const inProgress = enrollmentData.length; // Total enrolled
 
-                // 2. Fetch Completed Lessons Count
+                // 3. Fetch Completed Lessons Count
                 const { count } = await supabase
                     .from('completed_lessons')
                     .select('*', { count: 'exact', head: true })
@@ -50,12 +65,46 @@ const StudentDashboard = () => {
 
     return (
         <div className="space-y-8">
+            {/* Services Header Row (New) */}
+            {services.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="text-xl font-medium text-white">Explore Services</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {services.map((service) => {
+                            const Icon = IconMap[service.icon_name || 'Sparkles'] || Sparkles;
+                            const isExternal = service.type === 'link';
+                            const path = isExternal ? service.redirect_url : `/student/services/${service.slug}`;
+
+                            const InnerContent = () => (
+                                <div className="flex flex-col items-center justify-center p-4 bg-zinc-800/50 hover:bg-zinc-800 border border-white/5 hover:border-primary/50 rounded-xl transition-all group h-full">
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                        <Icon size={20} />
+                                    </div>
+                                    <span className="text-sm text-zinc-300 font-medium text-center">{service.title}</span>
+                                    {isExternal && <ExternalLink size={12} className="text-zinc-600 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                </div>
+                            );
+
+                            return isExternal ? (
+                                <a key={service.id} href={path} target="_blank" rel="noopener noreferrer" className="block h-28">
+                                    <InnerContent />
+                                </a>
+                            ) : (
+                                <Link key={service.id} to={path} className="block h-28">
+                                    <InnerContent />
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { label: 'Courses Enrolled', value: stats.coursesInProgress, icon: BookOpen, color: 'text-blue-500' },
                     { label: 'Lessons Learned', value: stats.lessonsLearned, icon: CheckCircle, color: 'text-primary' },
-                    { label: 'Certificates Earned', value: stats.certificates, icon: Award, color: 'text-yellow-500' }, // Changed from Avg Score
+                    { label: 'Certificates Earned', value: stats.certificates, icon: Award, color: 'text-yellow-500' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-zinc-800/50 border border-white/5 p-6 rounded-2xl flex items-center justify-between">
                         <div>

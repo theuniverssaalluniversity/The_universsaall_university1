@@ -4,7 +4,7 @@ import { ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext'; // Added
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface Product {
     id: string;
@@ -22,6 +22,8 @@ const ShopPage = () => {
     const [loading, setLoading] = useState(true);
     const { addItem } = useCart();
     const { formatPrice } = useCurrency(); // Added
+    const location = useLocation();
+    const isDashboard = location.pathname.startsWith('/student') || location.pathname.startsWith('/instructor');
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -52,18 +54,18 @@ const ShopPage = () => {
     };
 
     return (
-        <div className="min-h-screen pt-20 pb-12">
+        <div className={isDashboard ? "space-y-8" : "min-h-screen pt-20 pb-12"}>
             {/* Header */}
-            <div className="relative py-24 bg-zinc-900/30 overflow-hidden mb-12">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
-                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+            <div className={isDashboard ? "bg-zinc-800/50 border border-white/5 rounded-2xl p-8 mb-8" : "relative py-24 bg-zinc-900/30 overflow-hidden mb-12"}>
+                {!isDashboard && <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />}
+                <div className={isDashboard ? "" : "max-w-7xl mx-auto px-4 relative z-10 text-center"}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <h1 className="text-4xl md:text-6xl font-serif text-white mb-6">Cosmic Shop</h1>
-                        <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+                        <h1 className={isDashboard ? "text-2xl font-serif text-white mb-2" : "text-4xl md:text-6xl font-serif text-white mb-6"}>Cosmic Shop</h1>
+                        <p className={isDashboard ? "text-zinc-400" : "text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed"}>
                             Curated tools and artifacts to support your spiritual journey.
                         </p>
                     </motion.div>

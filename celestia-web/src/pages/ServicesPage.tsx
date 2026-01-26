@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Clock, Calendar, ArrowRight, Sparkles, Heart, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -38,6 +38,8 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
     const [services, setServices] = useState<Service[]>([]);
     const [category, setCategory] = useState<Category | null>(null);
     const [loading, setLoading] = useState(true);
+    const location = useLocation(); // Added
+    const isDashboard = location.pathname.startsWith('/student') || location.pathname.startsWith('/instructor');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -96,21 +98,21 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
     );
 
     return (
-        <div className="min-h-screen pt-20 pb-12">
+        <div className={isDashboard ? "space-y-8" : "min-h-screen pt-20 pb-12"}>
             {/* Header */}
-            <div className="relative py-24 bg-zinc-900/30 overflow-hidden mb-12">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
-                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+            <div className={isDashboard ? "bg-zinc-800/50 border border-white/5 rounded-2xl p-8 mb-8" : "relative py-24 bg-zinc-900/30 overflow-hidden mb-12"}>
+                {!isDashboard && <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />}
+                <div className={isDashboard ? "" : "max-w-7xl mx-auto px-4 relative z-10 text-center"}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6">
-                            {slug === 'healing' ? <Heart size={32} /> : <Sparkles size={32} />}
+                        <div className={isDashboard ? "w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4" : "w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6"}>
+                            {slug === 'healing' ? <Heart size={isDashboard ? 24 : 32} /> : <Sparkles size={isDashboard ? 24 : 32} />}
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-serif text-white mb-6">{category.title}</h1>
-                        <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+                        <h1 className={isDashboard ? "text-2xl font-serif text-white mb-2" : "text-4xl md:text-6xl font-serif text-white mb-6"}>{category.title}</h1>
+                        <p className={isDashboard ? "text-zinc-400" : "text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed"}>
                             {category.description || `Explore our ${category.title} services designed to guide and heal.`}
                         </p>
                     </motion.div>

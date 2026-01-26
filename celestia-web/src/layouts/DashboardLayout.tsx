@@ -33,44 +33,15 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         navigate('/login');
     };
 
-    const [dynamicMenuItems, setDynamicMenuItems] = useState<any[]>([]);
-
-    // Icon map for dynamic categories
-    const IconMap: any = {
-        LayoutDashboard, BookOpen, Users, ShoppingBag, Settings, LogOut, Menu, X, LifeBuoy, Tag, HelpCircle, Sparkles
-    };
-
-    useEffect(() => {
-        const fetchDynamicMenu = async () => {
-            // Only fetch for students or relevant roles if needed. 
-            // Requirement implies "User (Student) Dashboard".
-            if (role === 'student' || role === 'admin') {
-                const { data } = await supabase
-                    .from('service_categories')
-                    .select('*')
-                    .eq('is_visible', true) // Only show visible items
-                    .order('sort_order', { ascending: true });
-
-                if (data) {
-                    const dynamic = data.map(cat => ({
-                        name: cat.title,
-                        icon: IconMap[cat.icon_name || 'Sparkles'] || Sparkles,
-                        path: cat.type === 'link' ? cat.redirect_url : `/services/${cat.slug}`,
-                        isExternal: cat.type === 'link'
-                    }));
-                    setDynamicMenuItems(dynamic);
-                }
-            }
-        };
-        fetchDynamicMenu();
-    }, [role]);
+    // Dynamic menu fetching removed as per UI restructuring request
+    // Services will now be displayed on the Student Dashboard page directly
 
     const baseMenuItems = {
         student: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/student' },
             { name: 'My Courses', icon: BookOpen, path: '/student/courses' },
             { name: 'My Orders', icon: ShoppingBag, path: '/student/orders' },
-            { name: 'Shop', icon: Tag, path: '/shop' }, // Added Shop Link explicitly
+            { name: 'Shop', icon: Tag, path: '/student/shop' }, // Internal Shop Link
             { name: 'Support', icon: HelpCircle, path: '/student/support' },
         ],
         instructor: [
@@ -100,15 +71,8 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
         ]
     };
 
-    // Merge Dynamic Items (Specifically for Student)
-    let currentMenu = baseMenuItems[role] || baseMenuItems.student;
-
-    if (role === 'student' && dynamicMenuItems.length > 0) {
-        // Insert dynamic items before 'Support' (which is usually last)
-        const lastItem = currentMenu[currentMenu.length - 1]; // Support
-        const mainItems = currentMenu.slice(0, currentMenu.length - 1);
-        currentMenu = [...mainItems, ...dynamicMenuItems, lastItem];
-    }
+    // Standard Menu
+    const currentMenu = baseMenuItems[role] || baseMenuItems.student;
 
     return (
         <div className="min-h-screen bg-background flex text-white font-sans">

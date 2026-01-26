@@ -84,7 +84,14 @@ function App() {
                     <Route path="/student" element={<DashboardLayout role="student" />}>
                       <Route index element={<StudentDashboard />} />
                       <Route path="courses" element={<StudentDashboard />} /> {/* Alias for now */}
+                      <Route path="learn/:courseId" element={<LearnPage />} /> {/* Internal Course Player */}
                       <Route path="orders" element={<StudentOrders />} />
+
+                      {/* Internal Shop & Services */}
+                      <Route path="shop" element={<ShopPage />} />
+                      <Route path="shop/:slug" element={<ProductDetailPage />} />
+                      <Route path="services/:categorySlug" element={<ServicesPage />} />
+
                       <Route path="support" element={<TicketListPage />} />
                       <Route path="support/new" element={<CreateTicketPage />} />
                       <Route path="support/:ticketId" element={<UserTicketChat />} />

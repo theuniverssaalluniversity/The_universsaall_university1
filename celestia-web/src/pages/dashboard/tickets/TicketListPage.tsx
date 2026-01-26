@@ -6,6 +6,7 @@ import { MessageSquare, Plus, Clock, ExternalLink } from 'lucide-react';
 const TicketListPage = () => {
     const [tickets, setTickets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
 
     useEffect(() => {
         fetchTickets();
@@ -76,8 +77,8 @@ const TicketListPage = () => {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors relative ${filter === f
-                                ? 'text-primary border-b-2 border-primary bg-primary/5'
-                                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                            ? 'text-primary border-b-2 border-primary bg-primary/5'
+                            : 'text-zinc-400 hover:text-white hover:bg-white/5'
                             }`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
