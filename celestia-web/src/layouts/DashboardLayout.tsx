@@ -43,6 +43,7 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
             { name: 'My Orders', icon: ShoppingBag, path: '/student/orders' },
             { name: 'Shop', icon: Tag, path: '/student/shop' }, // Internal Shop Link
             { name: 'Support', icon: HelpCircle, path: '/student/support' },
+            { name: 'Profile', icon: Users, path: '/student/profile' },
         ],
         instructor: [
             { name: 'Dashboard', icon: LayoutDashboard, path: '/instructor' },
@@ -57,6 +58,7 @@ const DashboardLayout = ({ role }: { role: 'student' | 'instructor' | 'admin' | 
             { name: 'Staff & Roles', icon: Users, path: '/admin/staff' },
             { name: 'Courses', icon: BookOpen, path: '/admin/courses' },
             { name: 'Enrollments', icon: Users, path: '/admin/enrollments' },
+            { name: 'Student Details', icon: Users, path: '/admin/students-list' }, // New Page
             { name: 'Revenue', icon: ShoppingBag, path: '/admin/revenue' },
             { name: 'Services', icon: Sparkles, path: '/admin/services' },
             { name: 'Shop Products', icon: Tag, path: '/admin/shop' },

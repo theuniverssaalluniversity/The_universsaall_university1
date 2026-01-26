@@ -64,9 +64,13 @@ const Navbar = () => {
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-3 group">
                         {config.logo_url ? (
-                            <img src={config.logo_url} alt={config.name} className="h-10 w-10 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all" />
+                            <img
+                                src={config.logo_url}
+                                alt={config.name}
+                                className="h-12 w-auto object-contain group-hover:opacity-90 transition-opacity"
+                            />
                         ) : (
-                            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-serif font-bold text-xl ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
+                            <div className="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-serif font-bold text-xl ring-1 ring-primary/20 group-hover:ring-primary/50 transition-all">
                                 {config.name.charAt(0)}
                             </div>
                         )}

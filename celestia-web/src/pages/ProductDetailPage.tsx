@@ -113,25 +113,52 @@ const ProductDetailPage = () => {
                         </p>
 
                         {/* Actions */}
-                        <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/5">
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={added}
-                                className={`flex-1 py-4 px-8 rounded-full font-bold text-lg flex items-center justify-center gap-3 transition-all ${added
-                                    ? 'bg-green-500 text-black hover:bg-green-400'
-                                    : 'bg-primary text-black hover:bg-primary/90 hover:scale-[1.02]'
-                                    }`}
-                            >
-                                {added ? (
-                                    <>
-                                        <Check size={20} /> Added to Cart
-                                    </>
-                                ) : (
-                                    <>
-                                        <ShoppingBag size={20} /> Add to Cart
-                                    </>
-                                )}
-                            </button>
+                        {/* Actions */}
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                            {/* Coupon Section */}
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Enter Coupon Code"
+                                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white text-sm focus:border-primary/50 focus:outline-none flex-1"
+                                    id="coupon-input"
+                                />
+                                <button
+                                    onClick={() => alert('Coupon Applied! (Logic linked to Checkout)')}
+                                    className="px-4 py-2 bg-white/5 text-zinc-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={added}
+                                    className={`flex-1 py-4 px-8 rounded-full font-bold text-lg flex items-center justify-center gap-3 transition-all ${added
+                                        ? 'bg-green-500 text-black hover:bg-green-400'
+                                        : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                        }`}
+                                >
+                                    {added ? (
+                                        <>
+                                            <Check size={20} /> Added
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShoppingBag size={20} /> Add to Cart
+                                        </>
+                                    )}
+                                </button>
+
+                                <Link
+                                    to="/checkout"
+                                    onClick={() => !added && handleAddToCart()}
+                                    className="flex-1 py-4 px-8 rounded-full font-bold text-lg flex items-center justify-center gap-3 transition-all bg-primary text-black hover:bg-primary/90 hover:scale-[1.02] shadow-lg shadow-primary/20"
+                                >
+                                    Buy Now
+                                </Link>
+                            </div>
                         </div>
 
                         {/* Trust Badges */}

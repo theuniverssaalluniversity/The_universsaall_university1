@@ -22,12 +22,14 @@ import LearnPage from './pages/LearnPage';
 
 // New Support & Instructor Pages
 import StudentOrders from './pages/dashboard/student/StudentOrders';
+import ProfilePage from './pages/dashboard/ProfilePage';
 import SupportOrders from './pages/dashboard/support/SupportOrders';
 import SupportEnrollments from './pages/dashboard/support/SupportEnrollments';
 import SupportChat from './pages/dashboard/support/SupportChat';
 import InstructorCourses from './pages/dashboard/instructor/InstructorCourses';
 import AdminCoupons from './pages/dashboard/AdminCoupons';
 import AdminEnrollments from './pages/dashboard/AdminEnrollments';
+import AdminStudentDetails from './pages/dashboard/AdminStudentDetails';
 import AdminServices from './pages/dashboard/AdminServices';
 import AdminCourses from './pages/dashboard/AdminCourses';
 import AdminEditCourse from './pages/dashboard/AdminEditCourse';
@@ -91,7 +93,7 @@ function App() {
                       <Route path="shop" element={<ShopPage />} />
                       <Route path="shop/:slug" element={<ProductDetailPage />} />
                       <Route path="services/:categorySlug" element={<ServicesPage />} />
-
+                      <Route path="profile" element={<ProfilePage />} />
                       <Route path="support" element={<TicketListPage />} />
                       <Route path="support/new" element={<CreateTicketPage />} />
                       <Route path="support/:ticketId" element={<UserTicketChat />} />
@@ -125,6 +127,7 @@ function App() {
                       <Route path="services" element={<AdminServices />} />
                       <Route path="shop" element={<AdminShop />} />
                       <Route path="orders" element={<AdminOrdersPage />} />
+                      <Route path="students-list" element={<AdminStudentDetails />} />
                       <Route path="coupons" element={<AdminCoupons />} />
                       <Route path="courses" element={<AdminCourses />} />
                       <Route path="courses/:courseId/edit" element={<AdminEditCourse />} />

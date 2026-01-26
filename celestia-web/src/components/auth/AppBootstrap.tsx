@@ -12,53 +12,43 @@ export const AppBootstrap = ({ children }: { children: React.ReactNode }) => {
         let mounted = true;
 
         const checkConnection = async () => {
-            // 1. Race Condition: Database Ping vs Timeout
-            // If DB doesn't answer in 2000ms, we assume "Zombie State" and kill it.
-
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error(FORCE_RESET_MSG)), 2500)
-            );
-
-            // We perform a very cheap check: Get the current session (local) 
-            // AND try one network request (e.g. fetch count of an open table or just session refresh)
-            // Ideally getting session is enough, but if token is stale, getSession() might hang in some versions.
-            // Let's force a network handshake.
-            const networkCheckPromise = supabase.auth.getSession();
-
+            // STRICT MODE: We DO NOT render until we confirm DB is traceable.
             try {
-                await Promise.race([networkCheckPromise, timeoutPromise]);
-                // If we get here, Supabase client is at least responsive (or errored fast)
-                if (mounted) setIsReady(true);
-            } catch (err: any) {
-                console.warn("Bootstrap Warning:", err);
+                // 1. Simple Trace: Get Session
+                const { error } = await supabase.auth.getSession();
 
-                // If it was our forced timeout, NUCLEAR OPTION
-                if (err.message === FORCE_RESET_MSG || err.toString().includes(FORCE_RESET_MSG)) {
-                    console.error("CRITICAL: App failed to bootstrap. Clearing session and retrying.");
-
-                    // 1. Clear Supabase LocalStorage
-                    const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-                    if (key) localStorage.removeItem(key);
-
-                    // 2. Sign Out (fire and forget)
-                    supabase.auth.signOut().catch(() => { });
-
-                    // 3. Force Retry (once) or Just Load
-                    if (retryCount < 1) {
-                        setRetryCount(prev => prev + 1);
-                        // Trigger re-run
-                        return;
-                    }
+                if (error) {
+                    console.warn("Session check failed, but client might be reachable via public", error);
                 }
 
-                // If we failed twice or it was a different error, just let the app render.
-                // Better to render in "Guest Mode" than freeze.
+                // 2. Data Trace: Try to select count from a public table (e.g. service_categories or services)
+                // This proves the DB itself is responding to queries, not just the Auth server.
+                const { data, error: dbError } = await supabase
+                    .from('service_categories')
+                    .select('id')
+                    .limit(1)
+                    .maybeSingle();
+
+                if (dbError) throw dbError;
+
+                // If we reach here, we are CONNECTED.
                 if (mounted) setIsReady(true);
+
+            } catch (err) {
+                console.error("Database connection failed. Retrying in 2s...", err);
+
+                if (retryCount < 3) {
+                    setTimeout(() => {
+                        if (mounted) setRetryCount(prev => prev + 1);
+                    }, 2000);
+                } else {
+                    // Falls back to error screen or eventually gives up, 
+                    // BUT we do NOT set isReady(true) to avoid zombie UI.
+                }
             }
         };
 
         checkConnection();
-
         return () => { mounted = false; };
     }, [retryCount]);
 
