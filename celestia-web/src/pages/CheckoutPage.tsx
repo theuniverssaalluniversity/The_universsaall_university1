@@ -12,21 +12,72 @@ const CheckoutPage = () => {
     const { formatPrice } = useCurrency();
     const config = useConfig();
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [addressMode, setAddressMode] = useState<'saved' | 'new'>('new');
+    const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+    const [selectedAddressIndex, setSelectedAddressIndex] = useState<number>(-1);
+    const [newAddress, setNewAddress] = useState({
+        line1: '',
+        city: '',
+        state: '',
+        zip: '',
+        country: 'India'
+    });
+
+    useEffect(() => {
+        // Fetch previous addresses from order history
+        const fetchAddresses = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: orders } = await supabase
+                .from('orders')
+                .select('shipping_address')
+                .eq('user_id', user.id)
+                .not('shipping_address', 'is', null)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (orders) {
+                // Deduplicate addresses based on content
+                const unique = new Map();
+                orders.forEach(o => {
+                    const addr = o.shipping_address;
+                    const key = JSON.stringify(addr);
+                    if (!unique.has(key)) unique.set(key, addr);
+                });
+                const list = Array.from(unique.values());
+                setSavedAddresses(list);
+                if (list.length > 0) {
+                    setAddressMode('saved');
+                    setSelectedAddressIndex(0);
+                }
+            }
+        };
+        fetchAddresses();
+    }, []);
 
     const handlePlaceOrder = async () => {
         setLoading(true);
         setError(null);
 
         try {
-            // 1. Check Auth (Ideally wrapped in ProtectedRoute, but double check)
-            const { data: { user } } = await supabase.auth.getUser();
+            // Validation
+            let finalAddress = null;
+            if (addressMode === 'new') {
+                if (!newAddress.line1 || !newAddress.city || !newAddress.zip) {
+                    throw new Error("Please fill in all required address fields.");
+                }
+                finalAddress = newAddress;
+            } else {
+                if (selectedAddressIndex === -1 || !savedAddresses[selectedAddressIndex]) {
+                    throw new Error("Please select a saved address or create a new one.");
+                }
+                finalAddress = savedAddresses[selectedAddressIndex];
+            }
 
+            // 1. Check Auth
+            const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                // If guest checkout is main flow, we might capture email here.
-                // For now, assume login required or capture basic meta if public.
-                // Let's redirect to login for simplicity as per requirements (dashboard visibility)
                 navigate('/login?redirect=/checkout');
                 return;
             }
@@ -38,7 +89,7 @@ const CheckoutPage = () => {
                     user_id: user.id,
                     total_amount: total,
                     status: 'pending',
-                    // provider: 'manual' (or stripe later)
+                    shipping_address: finalAddress
                 })
                 .select()
                 .single();
@@ -48,31 +99,28 @@ const CheckoutPage = () => {
             // 3. Create Order Items
             const orderItems = items.map(item => ({
                 order_id: order.id,
-                item_id: item.itemId, // Note: Schema calls it item_id, ensure type match
-                item_type: item.type, // 'service' | 'course' | 'product'
+                item_id: item.itemId,
+                item_type: item.type,
                 price: item.price
             }));
 
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .insert(orderItems);
-
+            const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
             if (itemsError) throw itemsError;
 
-            // 4. Success
-            clearCart();
-            // Optional: Create notification record here if needed immediately
-            await supabase.from('notifications').insert({
-                type: 'admin_new_order',
-                payload: { order_id: order.id, total: total, user_email: user.email },
-                status: 'pending'
+            // 4. Send Confirmation Email (Simulated)
+            const { sendEmail, emailTemplates } = await import('../utils/emailService');
+            await sendEmail({
+                to: user.email || '',
+                ...emailTemplates.orderConfirmation(order.id, formatPrice(total))
             });
 
-            navigate('/student/orders'); // Redirect to orders page
+            // 5. Success
+            clearCart();
+            navigate('/student/orders');
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Failed to place order. Please try again.');
+            setError(err.message || 'Failed to place order.');
         } finally {
             setLoading(false);
         }
@@ -141,6 +189,99 @@ const CheckoutPage = () => {
                                 <span className="text-white">Included</span>
                             </div>
                         </div>
+
+                        <h2 className="text-xl font-bold text-white mb-6">Shipping Details</h2>
+
+                        {/* Saved Addresses Tabs */}
+                        {savedAddresses.length > 0 && (
+                            <div className="flex gap-2 mb-4">
+                                <button
+                                    onClick={() => setAddressMode('saved')}
+                                    className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${addressMode === 'saved' ? 'bg-primary text-black border-primary' : 'bg-transparent border-white/10 text-zinc-400 hover:text-white'}`}
+                                >
+                                    Saved Addresses
+                                </button>
+                                <button
+                                    onClick={() => setAddressMode('new')}
+                                    className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${addressMode === 'new' ? 'bg-primary text-black border-primary' : 'bg-transparent border-white/10 text-zinc-400 hover:text-white'}`}
+                                >
+                                    New Address
+                                </button>
+                            </div>
+                        )}
+
+                        {addressMode === 'saved' && savedAddresses.length > 0 ? (
+                            <div className="space-y-3 mb-6">
+                                {savedAddresses.map((addr, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => setSelectedAddressIndex(idx)}
+                                        className={`p-3 rounded-xl border cursor-pointer flex items-start gap-3 transition-colors ${selectedAddressIndex === idx ? 'bg-primary/10 border-primary' : 'bg-zinc-800/50 border-white/5 hover:border-white/20'}`}
+                                    >
+                                        <div className={`w-4 h-4 rounded-full border mt-1 flex items-center justify-center ${selectedAddressIndex === idx ? 'border-primary' : 'border-zinc-500'}`}>
+                                            {selectedAddressIndex === idx && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                        </div>
+                                        <div className="text-sm">
+                                            <div className="text-white">{addr.line1}</div>
+                                            <div className="text-zinc-500">{addr.city}, {addr.state} {addr.zip}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <label className="text-xs text-zinc-400 mb-1 block">Address Line 1</label>
+                                    <input
+                                        type="text"
+                                        value={newAddress.line1}
+                                        onChange={e => setNewAddress({ ...newAddress, line1: e.target.value })}
+                                        className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary/50 outline-none"
+                                        placeholder="Street Address"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-zinc-400 mb-1 block">City</label>
+                                        <input
+                                            type="text"
+                                            value={newAddress.city}
+                                            onChange={e => setNewAddress({ ...newAddress, city: e.target.value })}
+                                            className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary/50 outline-none"
+                                            placeholder="City"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-zinc-400 mb-1 block">Zip Code</label>
+                                        <input
+                                            type="text"
+                                            value={newAddress.zip}
+                                            onChange={e => setNewAddress({ ...newAddress, zip: e.target.value })}
+                                            className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary/50 outline-none"
+                                            placeholder="ZIP"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-zinc-400 mb-1 block">State & Country</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newAddress.state}
+                                            onChange={e => setNewAddress({ ...newAddress, state: e.target.value })}
+                                            className="flex-1 bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary/50 outline-none"
+                                            placeholder="State"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={newAddress.country}
+                                            disabled
+                                            className="w-20 bg-zinc-900 border border-white/5 rounded-lg px-3 py-2 text-zinc-500 text-sm cursor-not-allowed"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="border-t border-white/10 pt-4 mb-8 flex justify-between items-center">
                             <span className="text-lg font-bold text-white">Total</span>

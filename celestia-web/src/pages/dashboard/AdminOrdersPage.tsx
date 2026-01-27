@@ -44,7 +44,7 @@ const AdminOrdersPage = () => {
         setLoading(false);
     };
 
-    const updateStatus = async (orderId: string, newStatus: string) => {
+    const updateStatus = async (orderId: string, newStatus: string, userEmail: string) => {
         const { error } = await supabase
             .from('orders')
             .update({ status: newStatus })
@@ -52,6 +52,15 @@ const AdminOrdersPage = () => {
 
         if (!error) {
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus as any } : o));
+
+            // Trigger Email Notification
+            const { sendEmail, emailTemplates } = await import('../../utils/emailService');
+            await sendEmail({
+                to: userEmail,
+                ...emailTemplates.orderStatusUpdate(orderId, newStatus)
+            });
+
+            alert(`Status updated and email sent to ${userEmail}!`);
         } else {
             console.error(error);
             alert('Failed to update status');
@@ -76,8 +85,8 @@ const AdminOrdersPage = () => {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-2 rounded-lg font-medium capitalize transition-colors ${filter === f
-                                ? 'bg-primary text-black'
-                                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                            ? 'bg-primary text-black'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
                             }`}
                     >
                         {f}
@@ -133,10 +142,10 @@ const AdminOrdersPage = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${order.status === 'fulfilled'
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                : order.status === 'pending'
-                                                    ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                                                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            : order.status === 'pending'
+                                                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                                                : 'bg-red-500/10 text-red-400 border-red-500/20'
                                             }`}>
                                             {order.status === 'fulfilled' && <CheckCircle size={12} />}
                                             {order.status === 'pending' && <Clock size={12} />}
@@ -147,7 +156,7 @@ const AdminOrdersPage = () => {
                                     <td className="px-6 py-4">
                                         <select
                                             value={order.status}
-                                            onChange={(e) => updateStatus(order.id, e.target.value)}
+                                            onChange={(e) => updateStatus(order.id, e.target.value, order.users?.email || '')}
                                             className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
                                         >
                                             <option value="pending">Pending</option>
