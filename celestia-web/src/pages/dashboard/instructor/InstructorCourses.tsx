@@ -27,8 +27,17 @@ const InstructorCourses = () => {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this course? This cannot be undone.')) return;
+
         const { error } = await supabase.from('courses').delete().eq('id', id);
-        if (!error) {
+
+        if (error) {
+            console.error("Delete Error:", error);
+            if (error.message.includes('completed >50%')) {
+                alert("Cannot delete this course: Some students have already completed more than 50% of the content.");
+            } else {
+                alert("Failed to delete course. It may have active enrollments or other dependencies.");
+            }
+        } else {
             setCourses(courses.filter(c => c.id !== id));
         }
     };

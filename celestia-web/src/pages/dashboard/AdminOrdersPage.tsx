@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
 import { useCurrency } from '../../context/CurrencyContext';
 import { format } from 'date-fns';
-import { Search, Filter, CheckCircle, Clock, XCircle, ShoppingBag } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface Order {
     id: string;
@@ -95,8 +95,8 @@ const AdminOrdersPage = () => {
             </div>
 
             {/* Table */}
-            <div className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden">
-                <table className="w-full text-left">
+            <div className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-left min-w-[1000px]">
                     <thead className="bg-zinc-800/50 text-zinc-400 uppercase text-xs">
                         <tr>
                             <th className="px-6 py-4">Order ID</th>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabase';
 import { ArrowLeft, Save } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
 
 const CreateCoursePage = () => {
     const navigate = useNavigate();

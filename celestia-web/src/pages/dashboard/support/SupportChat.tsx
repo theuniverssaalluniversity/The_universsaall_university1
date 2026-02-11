@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../utils/supabase';
-import { Send, User, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { Send, User, Search, AlertCircle, CheckCircle, ChevronLeft } from 'lucide-react';
 
 const SupportChat = () => {
     const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
@@ -110,7 +110,7 @@ const SupportChat = () => {
     return (
         <div className="h-[calc(100vh-8rem)] flex gap-6">
             {/* Sidebar List */}
-            <div className="w-80 flex flex-col bg-zinc-900 border border-white/5 rounded-xl overflow-hidden">
+            <div className={`w-full md:w-80 flex flex-col bg-zinc-900 border border-white/5 rounded-xl overflow-hidden ${selectedTicket ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 border-b border-white/5">
                     <h2 className="text-lg font-medium text-white mb-4">Ticket Inbox</h2>
                     <div className="relative">
@@ -151,13 +151,19 @@ const SupportChat = () => {
             </div>
 
             {/* Ticket Detail Area */}
-            <div className="flex-1 bg-zinc-900 border border-white/5 rounded-xl flex flex-col overflow-hidden">
+            <div className={`flex-1 bg-zinc-900 border border-white/5 rounded-xl flex flex-col overflow-hidden ${!selectedTicket ? 'hidden md:flex' : 'flex'}`}>
                 {selectedTicket ? (
                     <>
                         {/* Header */}
-                        <div className="h-20 border-b border-white/5 flex items-center justify-between px-6">
+                        <div className="h-20 border-b border-white/5 flex items-center justify-between px-4 md:px-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 overflow-hidden">
+                                <button
+                                    onClick={() => setSelectedTicket(null)}
+                                    className="md:hidden p-2 -ml-2 text-zinc-400 hover:text-white"
+                                >
+                                    <ChevronLeft size={24} />
+                                </button>
+                                <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 overflow-hidden shrink-0">
                                     {selectedTicket.users?.avatar_url ? (
                                         <img src={selectedTicket.users.avatar_url} className="w-full h-full object-cover" />
                                     ) : (
@@ -165,12 +171,12 @@ const SupportChat = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <div className="text-white font-medium">{selectedTicket.users?.full_name}</div>
-                                    <div className="text-xs text-zinc-500">{selectedTicket.users?.email}</div>
+                                    <div className="text-white font-medium line-clamp-1">{selectedTicket.users?.full_name}</div>
+                                    <div className="text-xs text-zinc-500 line-clamp-1">{selectedTicket.users?.email}</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase border ${selectedTicket.status === 'open' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase border whitespace-nowrap ${selectedTicket.status === 'open' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                     selectedTicket.status === 'resolved' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
                                         'bg-zinc-800 text-zinc-400'
                                     }`}>
@@ -179,7 +185,7 @@ const SupportChat = () => {
                                 {selectedTicket.status !== 'resolved' && (
                                     <button
                                         onClick={() => handleUpdateStatus(selectedTicket.id, 'resolved')}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+                                        className="hidden md:flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
                                     >
                                         <CheckCircle size={16} /> Mark Resolved
                                     </button>
@@ -188,9 +194,9 @@ const SupportChat = () => {
                         </div>
 
                         {/* Ticket Content */}
-                        <div className="flex-1 p-8 overflow-y-auto space-y-6 flex flex-col">
+                        <div className="flex-1 p-4 md:p-8 overflow-y-auto space-y-6 flex flex-col bg-black/20">
                             {/* Original Ticket Message */}
-                            <div className="bg-zinc-800/50 border border-white/5 rounded-xl p-6 text-zinc-300 leading-relaxed whitespace-pre-wrap self-start max-w-[85%]">
+                            <div className="bg-zinc-800/50 border border-white/5 rounded-xl p-4 md:p-6 text-zinc-300 leading-relaxed whitespace-pre-wrap self-start w-full md:max-w-[85%]">
                                 <div className="text-xs text-zinc-500 mb-2 font-bold uppercase tracking-wider">Original Request</div>
                                 {selectedTicket.message}
                             </div>
@@ -198,7 +204,7 @@ const SupportChat = () => {
                             {/* Chat History */}
                             {messages.map((msg) => {
                                 return (
-                                    <div key={msg.id} className={`max-w-[80%] p-4 rounded-xl border ${msg.sender_id === selectedTicket.user_id
+                                    <div key={msg.id} className={`max-w-[90%] md:max-w-[80%] p-4 rounded-xl border ${msg.sender_id === selectedTicket.user_id
                                         ? 'bg-zinc-800/50 border-white/5 self-start'
                                         : 'bg-primary/10 border-primary/20 text-white self-end'
                                         }`}>
@@ -210,6 +216,7 @@ const SupportChat = () => {
                                 );
                             })}
                         </div>
+
 
                         {/* Reply Input (Visual only for now) */}
                         <div className="p-4 border-t border-white/5 bg-black/20">

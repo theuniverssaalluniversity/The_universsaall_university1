@@ -145,7 +145,11 @@ const LearnPage = () => {
                                             <button
                                                 key={lesson.id}
                                                 onClick={() => {
-                                                    if (!isLocked) setActiveLesson(lesson);
+                                                    if (!isLocked) {
+                                                        setActiveLesson(lesson);
+                                                        // Close sidebar on mobile
+                                                        if (window.innerWidth < 768) setSidebarOpen(false);
+                                                    }
                                                 }}
                                                 disabled={isLocked}
                                                 className={clsx(

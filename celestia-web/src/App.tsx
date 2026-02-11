@@ -1,56 +1,83 @@
+import { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ConfigProvider } from './context/ConfigContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { CartProvider } from './context/CartContext';
-import PublicLayout from './layouts/PublicLayout';
-import LandingPage from './pages/LandingPage';
-import CoursesPage from './pages/CoursesPage';
-import CourseDetailPage from './pages/CourseDetailPage';
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import DashboardLayout from './layouts/DashboardLayout';
-import RoleGuard from './components/auth/RoleGuard';
-import StudentDashboard from './pages/dashboard/StudentDashboard';
-import InstructorDashboard from './pages/dashboard/InstructorDashboard';
-import AdminDashboard from './pages/dashboard/AdminDashboard';
-import AdminSettings from './pages/dashboard/AdminSettings';
-import AdminStaff from './pages/dashboard/AdminStaff';
-import AdminRevenue from './pages/dashboard/AdminRevenue';
-import SupportDashboard from './pages/dashboard/SupportDashboard';
-import CreateCoursePage from './pages/dashboard/CreateCoursePage';
-import LearnPage from './pages/LearnPage';
+const PublicLayout = lazy(() => import('./layouts/PublicLayout'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const CoursesPage = lazy(() => import('./pages/CoursesPage'));
+const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
+const RoleGuard = lazy(() => import('./components/auth/RoleGuard'));
+const StudentDashboard = lazy(() => import('./pages/dashboard/StudentDashboard'));
+const InstructorDashboard = lazy(() => import('./pages/dashboard/InstructorDashboard'));
+const AdminDashboard = lazy(() => import('./pages/dashboard/AdminDashboard'));
+const AdminSettings = lazy(() => import('./pages/dashboard/AdminSettings'));
+const AdminStaff = lazy(() => import('./pages/dashboard/AdminStaff'));
+const AdminRevenue = lazy(() => import('./pages/dashboard/AdminRevenue'));
+const SupportDashboard = lazy(() => import('./pages/dashboard/SupportDashboard'));
+const CreateCoursePage = lazy(() => import('./pages/dashboard/CreateCoursePage'));
+const LearnPage = lazy(() => import('./pages/LearnPage'));
 
 // New Support & Instructor Pages
-import StudentOrders from './pages/dashboard/student/StudentOrders';
-import ProfilePage from './pages/dashboard/ProfilePage';
-import SupportOrders from './pages/dashboard/support/SupportOrders';
-import SupportEnrollments from './pages/dashboard/support/SupportEnrollments';
-import SupportChat from './pages/dashboard/support/SupportChat';
-import InstructorCourses from './pages/dashboard/instructor/InstructorCourses';
-import AdminCoupons from './pages/dashboard/AdminCoupons';
-import AdminEnrollments from './pages/dashboard/AdminEnrollments';
-import AdminStudentDetails from './pages/dashboard/AdminStudentDetails';
-import AdminServices from './pages/dashboard/AdminServices';
-import AdminCourses from './pages/dashboard/AdminCourses';
-import AdminEditCourse from './pages/dashboard/AdminEditCourse';
-import AdminShop from './pages/dashboard/AdminShop';
-import AdminOrdersPage from './pages/dashboard/AdminOrdersPage';
-import InstructorStudents from './pages/dashboard/instructor/InstructorStudents';
-import InstructorEarnings from './pages/dashboard/instructor/InstructorEarnings';
-import EditCourseContent from './pages/dashboard/instructor/EditCourseContent';
-import TicketListPage from './pages/dashboard/tickets/TicketListPage';
-import CreateTicketPage from './pages/dashboard/tickets/CreateTicketPage';
-import UserTicketChat from './pages/dashboard/tickets/UserTicketChat';
-import ServicesPage from './pages/ServicesPage';
-import ShopPage from './pages/ShopPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import CheckoutPage from './pages/CheckoutPage';
+const StudentOrders = lazy(() => import('./pages/dashboard/student/StudentOrders'));
+const ProfilePage = lazy(() => import('./pages/dashboard/ProfilePage'));
+const SupportOrders = lazy(() => import('./pages/dashboard/support/SupportOrders'));
+const SupportEnrollments = lazy(() => import('./pages/dashboard/support/SupportEnrollments'));
+const SupportChat = lazy(() => import('./pages/dashboard/support/SupportChat'));
+const InstructorCourses = lazy(() => import('./pages/dashboard/instructor/InstructorCourses'));
+const AdminCoupons = lazy(() => import('./pages/dashboard/AdminCoupons'));
+const AdminEnrollments = lazy(() => import('./pages/dashboard/AdminEnrollments'));
+const AdminStudentDetails = lazy(() => import('./pages/dashboard/AdminStudentDetails'));
+const AdminServices = lazy(() => import('./pages/dashboard/AdminServices'));
+const AdminCourses = lazy(() => import('./pages/dashboard/AdminCourses'));
+const AdminEditCourse = lazy(() => import('./pages/dashboard/AdminEditCourse'));
+const AdminShop = lazy(() => import('./pages/dashboard/AdminShop'));
+const AdminOrdersPage = lazy(() => import('./pages/dashboard/AdminOrdersPage'));
+const AdminTransactions = lazy(() => import('./pages/dashboard/AdminTransactions'));
+const InstructorStudents = lazy(() => import('./pages/dashboard/instructor/InstructorStudents'));
+const InstructorEarnings = lazy(() => import('./pages/dashboard/instructor/InstructorEarnings'));
+const EditCourseContent = lazy(() => import('./pages/dashboard/instructor/EditCourseContent'));
+const TicketListPage = lazy(() => import('./pages/dashboard/tickets/TicketListPage'));
+const CreateTicketPage = lazy(() => import('./pages/dashboard/tickets/CreateTicketPage'));
+const UserTicketChat = lazy(() => import('./pages/dashboard/tickets/UserTicketChat'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+const ServiceDetailPage = lazy(() => import('./pages/ServiceDetailPage'));
+const ShopPage = lazy(() => import('./pages/ShopPage'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const SuccessPage = lazy(() => import('./pages/SuccessPage'));
 
 import { AuthProvider } from './context/AuthContext';
 
+import { App as CapacitorApp } from '@capacitor/app';
+
 import { AppBootstrap } from './components/auth/AppBootstrap';
+import ScrollToTop from './components/layout/ScrollToTop';
 
 function App() {
+  // Mobile Back Button Handling
+  useEffect(() => {
+    let mounted = true;
+
+    CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if (!mounted) return;
+
+      if (canGoBack) {
+        window.history.back();
+      } else {
+        CapacitorApp.exitApp();
+      }
+    });
+
+    return () => {
+      mounted = false;
+      CapacitorApp.removeAllListeners();
+    };
+  }, []);
+
   return (
     <AppBootstrap>
       <ConfigProvider>
@@ -58,100 +85,111 @@ function App() {
           <CurrencyProvider>
             <CartProvider>
               <Router>
-                <Routes>
-                  <Route element={<PublicLayout />}>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/courses" element={<CoursesPage />} />
-                    <Route path="/courses/:slug" element={<CourseDetailPage />} />
+                <ScrollToTop />
+                <div className="bg-black min-h-screen text-white">
+                  <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-black text-white">Loading App...</div>}>
+                    <Routes>
+                      <Route element={<PublicLayout />}>
+                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/success" element={<SuccessPage />} />
+                        <Route path="/courses" element={<CoursesPage />} />
+                        <Route path="/courses/:slug" element={<CourseDetailPage />} />
 
-                    {/* Dynamic Services Route */}
-                    <Route path="/services/:categorySlug" element={<ServicesPage />} />
+                        {/* Dynamic Services Route */}
+                        <Route path="/services/:categorySlug" element={<ServicesPage />} />
 
-                    {/* Legacy Routes (Mapped to new component in ServicesPage) */}
-                    <Route path="/readings" element={<ServicesPage categorySlug="reading" />} />
-                    <Route path="/healings" element={<ServicesPage categorySlug="healing" />} />
+                        {/* Legacy Routes (Mapped to new component in ServicesPage) */}
+                        <Route path="/readings" element={<ServicesPage categorySlug="reading" />} />
+                        <Route path="/healings" element={<ServicesPage categorySlug="healing" />} />
 
-                    <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/shop/:slug" element={<ProductDetailPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/cart" element={<div className="p-20 text-center text-zinc-500">Cart (Coming Soon)</div>} />
-                    <Route path="/checkout" element={<CheckoutPage />} />
-                  </Route>
+                        <Route path="/shop" element={<ShopPage />} />
+                        <Route path="/shop/:slug" element={<ProductDetailPage />} />
 
-                  {/* Protected Dashboards */}
+                        <Route path="/services/:categorySlug" element={<ServicesPage />} />
+                        <Route path="/services/book/:serviceId" element={<ServiceDetailPage />} />
 
-                  {/* Student */}
-                  <Route element={<RoleGuard allowedRoles={['student']} />}>
-                    <Route path="/student" element={<DashboardLayout role="student" />}>
-                      <Route index element={<StudentDashboard />} />
-                      <Route path="courses" element={<StudentDashboard />} /> {/* Alias for now */}
-                      <Route path="learn/:courseId" element={<LearnPage />} /> {/* Internal Course Player */}
-                      <Route path="orders" element={<StudentOrders />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/cart" element={<div className="p-20 text-center text-zinc-500">Cart (Coming Soon)</div>} />
+                        <Route path="/checkout" element={<CheckoutPage />} />
+                      </Route>
 
-                      {/* Internal Shop & Services */}
-                      <Route path="shop" element={<ShopPage />} />
-                      <Route path="shop/:slug" element={<ProductDetailPage />} />
-                      <Route path="services/:categorySlug" element={<ServicesPage />} />
-                      <Route path="profile" element={<ProfilePage />} />
-                      <Route path="support" element={<TicketListPage />} />
-                      <Route path="support/new" element={<CreateTicketPage />} />
-                      <Route path="support/:ticketId" element={<UserTicketChat />} />
-                    </Route>
-                    <Route path="/learn/:courseId" element={<LearnPage />} />
-                  </Route>
+                      {/* Protected Dashboards */}
 
-                  {/* Instructor */}
-                  <Route element={<RoleGuard allowedRoles={['instructor']} />}>
-                    <Route path="/instructor" element={<DashboardLayout role="instructor" />}>
-                      <Route index element={<InstructorDashboard />} />
-                      <Route path="create-course" element={<CreateCoursePage />} />
-                      <Route path="courses/:courseId/edit" element={<EditCourseContent />} />
-                      <Route path="courses" element={<InstructorCourses />} />
-                      <Route path="students" element={<InstructorStudents />} />
-                      <Route path="earnings" element={<InstructorEarnings />} />
-                      <Route path="support" element={<TicketListPage />} />
-                      <Route path="support/new" element={<CreateTicketPage />} />
-                      <Route path="support/:ticketId" element={<UserTicketChat />} />
-                    </Route>
-                  </Route>
+                      {/* Student */}
+                      <Route element={<RoleGuard allowedRoles={['student']} />}>
+                        <Route path="/student" element={<DashboardLayout role="student" />}>
+                          <Route index element={<StudentDashboard />} />
+                          <Route path="courses" element={<StudentDashboard />} /> {/* Alias for now */}
+                          <Route path="learn/:courseId" element={<LearnPage />} /> {/* Internal Course Player */}
+                          <Route path="orders" element={<StudentOrders />} />
 
-                  {/* Admin */}
-                  <Route element={<RoleGuard allowedRoles={['admin']} />}>
-                    <Route path="/admin" element={<DashboardLayout role="admin" />}>
-                      <Route index element={<AdminDashboard />} />
-                      <Route path="settings" element={<AdminSettings />} />
-                      <Route path="staff" element={<AdminStaff />} />
-                      <Route path="revenue" element={<AdminRevenue />} />
-                      <Route path="enrollments" element={<AdminEnrollments />} />
-                      <Route path="services" element={<AdminServices />} />
-                      <Route path="shop" element={<AdminShop />} />
-                      <Route path="orders" element={<AdminOrdersPage />} />
-                      <Route path="students-list" element={<AdminStudentDetails />} />
-                      <Route path="coupons" element={<AdminCoupons />} />
-                      <Route path="courses" element={<AdminCourses />} />
-                      <Route path="courses/:courseId/edit" element={<AdminEditCourse />} />
-                      <Route path="create-course" element={<CreateCoursePage />} />
-                    </Route>
-                  </Route>
+                          {/* Internal Shop & Services */}
+                          <Route path="shop" element={<ShopPage />} />
+                          <Route path="shop/:slug" element={<ProductDetailPage />} />
+                          <Route path="services/:categorySlug" element={<ServicesPage />} />
+                          <Route path="profile" element={<ProfilePage />} />
+                          <Route path="support" element={<TicketListPage />} />
+                          <Route path="support/new" element={<CreateTicketPage />} />
+                          <Route path="support/:ticketId" element={<UserTicketChat />} />
+                        </Route>
+                        <Route path="/learn/:courseId" element={<LearnPage />} />
+                      </Route>
 
-                  {/* Support */}
-                  <Route element={<RoleGuard allowedRoles={['support', 'admin']} />}>
-                    <Route path="/support" element={<DashboardLayout role="support" />}>
-                      <Route index element={<SupportDashboard />} />
-                      <Route path="orders" element={<SupportOrders />} />
-                      <Route path="enrollments" element={<SupportEnrollments />} />
-                      <Route path="chat" element={<SupportChat />} />
-                    </Route>
-                  </Route>
+                      {/* Instructor */}
+                      <Route element={<RoleGuard allowedRoles={['instructor']} />}>
+                        <Route path="/instructor" element={<DashboardLayout role="instructor" />}>
+                          <Route index element={<InstructorDashboard />} />
+                          <Route path="create-course" element={<CreateCoursePage />} />
+                          <Route path="courses/:courseId/edit" element={<EditCourseContent />} />
+                          <Route path="courses" element={<InstructorCourses />} />
+                          <Route path="students" element={<InstructorStudents />} />
+                          <Route path="earnings" element={<InstructorEarnings />} />
+                          <Route path="support" element={<TicketListPage />} />
+                          <Route path="support/new" element={<CreateTicketPage />} />
+                          <Route path="support/:ticketId" element={<UserTicketChat />} />
+                        </Route>
+                      </Route>
 
-                </Routes>
+                      {/* Admin */}
+                      <Route element={<RoleGuard allowedRoles={['admin']} />}>
+                        <Route path="/admin" element={<DashboardLayout role="admin" />}>
+                          <Route index element={<AdminDashboard />} />
+                          <Route path="settings" element={<AdminSettings />} />
+                          <Route path="staff" element={<AdminStaff />} />
+                          <Route path="revenue" element={<AdminRevenue />} />
+                          <Route path="enrollments" element={<AdminEnrollments />} />
+                          <Route path="services" element={<AdminServices />} />
+                          <Route path="shop" element={<AdminShop />} />
+                          <Route path="orders" element={<AdminOrdersPage />} />
+                          <Route path="students-list" element={<AdminStudentDetails />} />
+                          <Route path="coupons" element={<AdminCoupons />} />
+                          <Route path="courses" element={<AdminCourses />} />
+                          <Route path="courses/:courseId/edit" element={<AdminEditCourse />} />
+                          <Route path="create-course" element={<CreateCoursePage />} />
+                          <Route path="transactions" element={<AdminTransactions />} />
+                        </Route>
+                      </Route>
+
+                      {/* Support */}
+                      <Route element={<RoleGuard allowedRoles={['support', 'admin']} />}>
+                        <Route path="/support" element={<DashboardLayout role="support" />}>
+                          <Route index element={<SupportDashboard />} />
+                          <Route path="orders" element={<SupportOrders />} />
+                          <Route path="enrollments" element={<SupportEnrollments />} />
+                          <Route path="chat" element={<SupportChat />} />
+                        </Route>
+                      </Route>
+
+                    </Routes>
+                  </Suspense>
+                </div>
               </Router>
             </CartProvider>
           </CurrencyProvider>
         </AuthProvider>
       </ConfigProvider>
-    </AppBootstrap>
+    </AppBootstrap >
   );
 }
 

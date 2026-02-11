@@ -91,7 +91,7 @@ const AdminCourses = () => {
                                 <h3 className="font-medium text-white text-lg truncate mb-1">{course.title}</h3>
                                 <p className="text-zinc-500 text-xs mb-2">By {course.instructor?.full_name || 'Unknown'}</p>
                                 <div className="flex items-center justify-between mt-auto">
-                                    <span className="text-primary font-bold">${course.price}</span>
+                                    <span className="text-primary font-bold">₹{course.price}</span>
                                     <span className={`text-xs px-2 py-0.5 rounded-full border ${course.status === 'published' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                                         }`}>
                                         {course.status.toUpperCase()}

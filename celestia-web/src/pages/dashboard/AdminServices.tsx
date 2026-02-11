@@ -25,6 +25,7 @@ interface Service {
     display_mode?: 'content' | 'redirect';
     redirect_url?: string;
     is_visible?: boolean; // Visibility Flag
+    requires_birth_details?: boolean;
     // Legacy type support for display only
     type?: string;
 }
@@ -42,7 +43,7 @@ const AdminServices = () => {
 
     const [formData, setFormData] = useState<Partial<Service>>({
         title: '', description: '', price: 0, price_inr: 0, duration_minutes: 60, thumbnail_url: '',
-        display_mode: 'content', redirect_url: '', is_visible: true
+        display_mode: 'content', redirect_url: '', is_visible: true, requires_birth_details: false
     });
 
     useEffect(() => {
@@ -382,7 +383,7 @@ const AdminServices = () => {
 
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm text-zinc-400 mb-1">Price (USD)</label>
+                                <label className="block text-sm text-zinc-400 mb-1">Price (₹)</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -424,6 +425,17 @@ const AdminServices = () => {
                                 className="w-4 h-4 rounded border-zinc-700 bg-black text-primary"
                             />
                             <label htmlFor="svc-visible" className="text-zinc-400 cursor-pointer select-none">Show on Student Dashboard</label>
+                        </div>
+
+                        <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <input
+                                type="checkbox"
+                                id="svc-birth"
+                                checked={formData.requires_birth_details || false}
+                                onChange={e => setFormData({ ...formData, requires_birth_details: e.target.checked })}
+                                className="w-4 h-4 rounded border-zinc-700 bg-black text-primary"
+                            />
+                            <label htmlFor="svc-birth" className="text-blue-400 cursor-pointer select-none text-sm font-medium">Require Birth Details (Date, Time, Place) at Checkout</label>
                         </div>
 
                         <div className="flex justify-end gap-2">

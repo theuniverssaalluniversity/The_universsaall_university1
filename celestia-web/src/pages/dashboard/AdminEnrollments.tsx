@@ -122,8 +122,8 @@ const AdminEnrollments = () => {
                 />
             </div>
 
-            <div className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden">
-                <table className="w-full text-left">
+            <div className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-white/5 text-zinc-400 text-sm font-medium">
                         <tr>
                             <th className="px-6 py-4">Student</th>

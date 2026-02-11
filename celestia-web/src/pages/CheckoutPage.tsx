@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { useConfig } from '../context/ConfigContext';
+// import { useConfig } from '../context/ConfigContext';
 import { supabase } from '../utils/supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, ShoppingBag, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowRight, ShoppingBag, Loader2, Minus, Plus } from 'lucide-react';
+import { PaymentService } from '../services/payment/PaymentService';
+import { sendEmail, emailTemplates } from '../utils/emailService';
+// import { motion } from 'framer-motion';
 
+// Force HMR Update
 const CheckoutPage = () => {
-    const { items, total, clearCart } = useCart();
+    // INR-Only: total is now always INR
+    const { items, total, updateQuantity, clearCart } = useCart();
     const { formatPrice } = useCurrency();
-    const config = useConfig();
     const navigate = useNavigate();
     const [addressMode, setAddressMode] = useState<'saved' | 'new'>('new');
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
@@ -22,12 +25,24 @@ const CheckoutPage = () => {
         zip: '',
         country: 'India'
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Birth Details State
+    const [birthDetails, setBirthDetails] = useState({
+        name: '', dob: '', time: '', place: ''
+    });
 
     useEffect(() => {
         // Fetch previous addresses from order history
         const fetchAddresses = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
+
+            // Pre-fill name if available
+            if (user.user_metadata?.full_name) {
+                setBirthDetails(prev => ({ ...prev, name: user.user_metadata.full_name }));
+            }
 
             const { data: orders } = await supabase
                 .from('orders')
@@ -42,8 +57,10 @@ const CheckoutPage = () => {
                 const unique = new Map();
                 orders.forEach(o => {
                     const addr = o.shipping_address;
-                    const key = JSON.stringify(addr);
-                    if (!unique.has(key)) unique.set(key, addr);
+                    if (addr && typeof addr === 'object') {
+                        const key = JSON.stringify(addr);
+                        if (!unique.has(key)) unique.set(key, addr);
+                    }
                 });
                 const list = Array.from(unique.values());
                 setSavedAddresses(list);
@@ -82,13 +99,17 @@ const CheckoutPage = () => {
                 return;
             }
 
-            // 2. Create Order
+            // 2. Initiate Payment (INR Only)
+            // Note: We create the order record first to get an ID unless we want to use a temp one.
+            // Let's create the pending order FIRST, consistent with best practices.
+
             const { data: order, error: orderError } = await supabase
                 .from('orders')
                 .insert({
                     user_id: user.id,
-                    total_amount: total,
-                    status: 'pending',
+                    total_amount: total, // INR
+                    status: 'pending', // Will update to completed after
+                    payment_status: 'pending',
                     shipping_address: finalAddress
                 })
                 .select()
@@ -96,31 +117,94 @@ const CheckoutPage = () => {
 
             if (orderError) throw orderError;
 
-            // 3. Create Order Items
+            // Create Order Items
             const orderItems = items.map(item => ({
                 order_id: order.id,
                 item_id: item.itemId,
                 item_type: item.type,
-                price: item.price
+                price: item.price // INR
             }));
+            await supabase.from('order_items').insert(orderItems);
 
-            const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-            if (itemsError) throw itemsError;
-
-            // 4. Send Confirmation Email (Simulated)
-            const { sendEmail, emailTemplates } = await import('../utils/emailService');
-            await sendEmail({
-                to: user.email || '',
-                ...emailTemplates.orderConfirmation(order.id, formatPrice(total))
+            // 3. Initiate Payment
+            await PaymentService.initiatePayment({
+                userId: user.id,
+                amount: total, // INR
+                currency: 'INR',
+                userEmail: user.email || '',
+                userPhone: newAddress.zip, // Placeholder
+                userName: user.user_metadata?.full_name || 'Customer',
+                description: `Order #${order.id.slice(0, 8)}`,
+                metadata: {
+                    order_id: order.id,
+                    items: items.map(i => i.title).join(', '),
+                    shipping_address: finalAddress
+                }
             });
 
-            // 5. Success
+            // 4. Update Order Status (Post-Payment Success)
+            await supabase.from('orders').update({ status: 'completed' }).eq('id', order.id);
+
+            // 5. Process Enrollments (CRITICAL FIX)
+            const enrollmentInserts = items
+                .filter(item => item.type === 'course')
+                .map(item => ({
+                    user_id: user.id,
+                    course_id: item.itemId,
+                    enrolled_at: new Date().toISOString(),
+                    progress_percent: 0,
+                    status: 'active'
+                }));
+
+            if (enrollmentInserts.length > 0) {
+                const { error: enrollError } = await supabase
+                    .from('enrollments')
+                    .insert(enrollmentInserts);
+                if (enrollError) console.error("Enrollment Error:", enrollError);
+            }
+
+            // 6. Process Service Requests
+            const serviceRequestInserts = items
+                .filter(item => item.type === 'service')
+                .map(item => ({
+                    user_id: user.id,
+                    service_id: item.itemId,
+                    order_id: order.id,
+                    status: 'pending',
+                    request_details: {
+                        item_title: item.title,
+                        item_price: item.price,
+                        quantity: item.quantity,
+                        birth_details: item.metadata?.requires_birth_details ? birthDetails : null
+                    }
+                }));
+
+            if (serviceRequestInserts.length > 0) {
+                const { error: serviceError } = await supabase
+                    .from('service_requests')
+                    .insert(serviceRequestInserts);
+                if (serviceError) console.error("Service Request Error:", serviceError);
+            }
+
+            // 7. Send Confirmation Email
+            try {
+                await sendEmail({
+                    to: user.email || '',
+                    ...emailTemplates.orderConfirmation(
+                        order.id,
+                        `₹${total.toFixed(2)}`
+                    )
+                });
+            } catch (emailErr) {
+                console.error("Failed to send email:", emailErr);
+            }
+
             clearCart();
-            navigate('/student/orders');
+            navigate('/success');
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Failed to place order.');
+            setError(err.message || 'Payment or Order Failed.');
         } finally {
             setLoading(false);
         }
@@ -163,7 +247,25 @@ const CheckoutPage = () => {
                                     <h3 className="text-white font-medium">{item.title}</h3>
                                     <p className="text-sm text-zinc-400 capitalize">{item.type}</p>
                                     <div className="mt-2 flex justify-between items-center">
-                                        <span className="text-zinc-500 text-sm">Qty: {item.quantity}</span>
+
+                                        {/* Quantity Controls */}
+                                        <div className="flex items-center gap-3 bg-zinc-800 rounded-lg px-2 py-1 border border-white/5">
+                                            <button
+                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                className="text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
+                                                disabled={item.quantity <= 1}
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <span className="text-sm font-medium text-white w-4 text-center">{item.quantity}</span>
+                                            <button
+                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                className="text-zinc-400 hover:text-white transition-colors"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
+
                                         <span className="text-primary font-bold">
                                             {formatPrice(item.price * item.quantity)}
                                         </span>
@@ -192,7 +294,6 @@ const CheckoutPage = () => {
 
                         <h2 className="text-xl font-bold text-white mb-6">Shipping Details</h2>
 
-                        {/* Saved Addresses Tabs */}
                         {savedAddresses.length > 0 && (
                             <div className="flex gap-2 mb-4">
                                 <button
@@ -310,6 +411,61 @@ const CheckoutPage = () => {
                                 </>
                             )}
                         </button>
+
+                        {/* Birth Details Modal / Section if required */}
+                        {items.some(i => i.metadata?.requires_birth_details) && (
+                            <div className="mt-8 pt-8 border-t border-white/10">
+                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                    Birth Details Required
+                                </h3>
+                                <div className="space-y-4 p-4 bg-zinc-800/30 rounded-xl border border-blue-500/20">
+                                    <p className="text-xs text-zinc-400">Some services in your cart accept birth details for a personalized experience.</p>
+
+                                    <div>
+                                        <label className="text-xs text-zinc-400 mb-1 block">Full Name</label>
+                                        <input
+                                            type="text"
+                                            value={birthDetails.name}
+                                            onChange={e => setBirthDetails({ ...birthDetails, name: e.target.value })}
+                                            className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500/50 outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs text-zinc-400 mb-1 block">Date of Birth</label>
+                                            <input
+                                                type="date"
+                                                value={birthDetails.dob}
+                                                onChange={e => setBirthDetails({ ...birthDetails, dob: e.target.value })}
+                                                className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500/50 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-zinc-400 mb-1 block">Time of Birth</label>
+                                            <input
+                                                type="time"
+                                                value={birthDetails.time}
+                                                onChange={e => setBirthDetails({ ...birthDetails, time: e.target.value })}
+                                                className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500/50 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs text-zinc-400 mb-1 block">Place of Birth</label>
+                                        <input
+                                            type="text"
+                                            value={birthDetails.place}
+                                            onChange={e => setBirthDetails({ ...birthDetails, place: e.target.value })}
+                                            className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500/50 outline-none"
+                                            placeholder="City, State, Country"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <p className="text-center text-xs text-zinc-500 mt-4">
                             By placing this order, you agree to our Terms of Service.

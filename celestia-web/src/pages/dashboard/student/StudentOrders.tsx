@@ -58,7 +58,7 @@ const StudentOrders = () => {
                                     </span>
                                 </div>
                                 <div className="text-white font-medium">
-                                    {order.order_items?.length || 0} Items • {order.currency === 'USD' ? '$' : '₹'}{order.total_amount}
+                                    {order.order_items?.length || 0} Items • ₹{order.total_amount}
                                 </div>
                                 <div className="text-sm text-zinc-500 mt-1 flex items-center gap-2">
                                     <Clock size={14} />

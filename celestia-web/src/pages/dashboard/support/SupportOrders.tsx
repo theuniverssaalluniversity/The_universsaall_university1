@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { format } from 'date-fns';
-import { Search, Filter, CheckCircle, Clock, XCircle, Package } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Package } from 'lucide-react';
 
 interface Order {
     id: string;

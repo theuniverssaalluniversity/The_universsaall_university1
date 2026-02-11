@@ -175,7 +175,7 @@ const AdminShop = () => {
                         {/* Pricing & Media */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-zinc-400">Price (USD)</label>
+                                <label className="block text-sm font-medium text-zinc-400">Price (₹)</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
                                     <input

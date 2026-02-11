@@ -192,7 +192,7 @@ const FeaturedCoursesGrid = () => {
                     </h3>
                     <p className="text-zinc-500 text-sm line-clamp-2">{course.description}</p>
                     <div className="mt-3 flex items-center gap-2 text-sm text-primary">
-                        <span>{course.price > 0 ? `$${course.price}` : 'Free'}</span>
+                        <span>{course.price > 0 ? `₹${course.price}` : 'Free'}</span>
                         <span className="w-1 h-1 bg-zinc-600 rounded-full" />
                         <span>View Details</span>
                     </div>
@@ -233,7 +233,6 @@ const FeaturedProductsGrid = () => {
             itemId: product.id,
             title: product.title,
             price: product.price,
-            price_inr: product.price_inr,
             type: 'product',
             quantity: 1
         });
@@ -271,7 +270,7 @@ const FeaturedProductsGrid = () => {
                                 <h3 className="text-xl font-medium text-white mb-2">{product.title}</h3>
                                 <div className="flex justify-between items-center mt-4">
                                     <span className="text-primary font-bold text-lg">
-                                        {formatPrice(product.price, product.price_inr)}
+                                        {formatPrice(product.price)}
                                     </span>
                                     <button
                                         onClick={(e) => handleAddToCart(e, product)}

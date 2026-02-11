@@ -6,7 +6,7 @@ export interface User {
     full_name: string;
     avatar_url?: string;
     role: UserRole;
-    short_id?: string;
+    unique_id?: string;
 }
 
 export interface OrganizationConfig {

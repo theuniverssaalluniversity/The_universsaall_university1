@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Trash2, ShoppingBag } from 'lucide-react';
-import { useCart, type CartItem } from '../../context/CartContext';
+import { useCart } from '../../context/CartContext';
 import { useCurrency } from '../../context/CurrencyContext'; // Assuming this context exists based on App.tsx
 import { useNavigate } from 'react-router-dom';
 

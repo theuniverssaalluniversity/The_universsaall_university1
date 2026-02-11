@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
 
 // FORCE TIMEOUT MSG
-const FORCE_RESET_MSG = "Connection hangs. Forcing reset.";
+
 
 export const AppBootstrap = ({ children }: { children: React.ReactNode }) => {
     const [isReady, setIsReady] = useState(false);
@@ -23,7 +23,7 @@ export const AppBootstrap = ({ children }: { children: React.ReactNode }) => {
 
                 // 2. Data Trace: Try to select count from a public table (e.g. service_categories or services)
                 // This proves the DB itself is responding to queries, not just the Auth server.
-                const { data, error: dbError } = await supabase
+                const { error: dbError } = await supabase
                     .from('service_categories')
                     .select('id')
                     .limit(1)

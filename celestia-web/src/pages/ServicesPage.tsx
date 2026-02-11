@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Clock, Calendar, ArrowRight, Sparkles, Heart, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCurrency } from '../context/CurrencyContext';
-import { useCart } from '../context/CartContext';
 
 interface Service {
     id: string;
@@ -30,11 +29,12 @@ interface ServicesPageProps {
 }
 
 const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
+    const navigate = useNavigate();
     const { categorySlug: paramSlug } = useParams();
     const slug = propSlug || paramSlug || 'reading';
 
     const { formatPrice } = useCurrency();
-    const { addItem } = useCart();
+    // const { addItem } = useCart();
     const [services, setServices] = useState<Service[]>([]);
     const [category, setCategory] = useState<Category | null>(null);
     const [loading, setLoading] = useState(true);
@@ -76,15 +76,7 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
         if (service.display_mode === 'redirect' && service.redirect_url) {
             window.location.href = service.redirect_url;
         } else {
-            addItem({
-                itemId: service.id,
-                title: service.title,
-                price: service.price,
-                price_inr: service.price_inr,
-                type: 'service',
-                quantity: 1,
-            });
-            // Cart opens automatically in addItem
+            navigate(`/services/book/${service.id}`);
         }
     };
 

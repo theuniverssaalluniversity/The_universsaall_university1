@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Search, Shield, User as UserIcon, Check } from 'lucide-react';
+import { Search, Shield, User as UserIcon } from 'lucide-react';
 import type { UserRole } from '../../types';
 
 const AdminStaff = () => {

@@ -41,10 +41,7 @@ const InstructorEarnings = () => {
 
             items = fetchedItems || [];
             totalSales = items.reduce((sum, item: any) => {
-                const currency = item.order?.currency || 'USD';
-                // 1 USD approx 83 INR
-                const val = currency === 'INR' ? item.price : (item.price * 83);
-                return sum + val;
+                return sum + item.price;
             }, 0);
         }
 
@@ -65,8 +62,7 @@ const InstructorEarnings = () => {
 
         const courseStats = courses?.map((course: any) => {
             const courseSales = items?.filter((i: any) => i.item_id === course.id).reduce((sum: number, i: any) => {
-                const currency = i.order?.currency || 'USD';
-                return sum + (currency === 'INR' ? i.price : (i.price * 83));
+                return sum + i.price;
             }, 0) || 0;
 
             const studentCount = allEnrollments?.filter((e: any) => e.course_id === course.id).length || 0;

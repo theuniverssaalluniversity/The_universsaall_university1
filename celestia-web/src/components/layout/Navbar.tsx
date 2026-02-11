@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
-import { useCurrency } from '../../context/CurrencyContext';
+// import { useCurrency } from '../../context/CurrencyContext';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { Menu, ShoppingBag, User, ExternalLink, ChevronDown } from 'lucide-react';
@@ -13,7 +13,7 @@ import { supabase } from '../../utils/supabase';
 const Navbar = () => {
     const config = useConfig();
     const { user, role } = useAuth();
-    const { currency, setCurrency } = useCurrency();
+    // const { currency } = useCurrency(); // Removed unused
     const { toggleCart, items } = useCart();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -58,7 +58,7 @@ const Navbar = () => {
     }, [categories]);
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/5 pt-[env(safe-area-inset-top)]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
                     {/* Logo */}
@@ -159,14 +159,7 @@ const Navbar = () => {
 
                     {/* Actions */}
                     <div className="hidden md:flex items-center gap-4">
-                        <button
-                            onClick={() => setCurrency(currency === 'USD' ? 'INR' : 'USD')}
-                            className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                        >
-                            <span className={currency === 'USD' ? 'text-primary' : 'text-zinc-500'}>$</span>
-                            <span className="w-px h-3 bg-white/10"></span>
-                            <span className={currency === 'INR' ? 'text-primary' : 'text-zinc-500'}>₹</span>
-                        </button>
+                        {/* Currency Switcher Removed */}
                         <button
                             onClick={toggleCart}
                             className="p-2 text-muted-foreground hover:text-primary transition-colors relative"

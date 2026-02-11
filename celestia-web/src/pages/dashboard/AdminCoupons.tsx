@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Plus, Trash2, Tag, Calendar, Users, RefreshCw, Power } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Power } from 'lucide-react';
 
 type Coupon = {
     id: string;

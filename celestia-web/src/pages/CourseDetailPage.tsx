@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Clock, Users, Star, PlayCircle, Lock } from 'lucide-react';
+import { PaymentService } from '../services/payment/PaymentService';
 import { motion } from 'framer-motion';
 
 interface CourseDetail {
@@ -131,15 +132,32 @@ const CourseDetailPage = () => {
         }
 
         try {
+            // Initiate Payment
+            const currencyCode = 'INR';
+
+            await PaymentService.initiatePayment({
+                userId: user.id,
+                amount: finalPrice,
+                currency: currencyCode,
+                userEmail: user.email || '',
+                userName: user.user_metadata?.full_name || 'Student',
+                description: `Enrollment: ${course.title}`,
+                metadata: {
+                    course_id: course.id,
+                    type: 'enrollment'
+                }
+            });
+
+            // On Successful Payment (Razorpay handler resolves Promise)
             // 1. Create Order
             const { data: order, error: orderError } = await supabase
                 .from('orders')
                 .insert({
                     user_id: user.id,
                     total_amount: finalPrice,
-                    status: 'completed', // Simulation: In real app, pending -> webhook -> completed
-                    payment_provider: 'mock_stripe',
-                    payment_id: `PAY-${Date.now()}`
+                    status: 'completed',
+                    payment_status: 'completed',
+                    payment_provider: 'razorpay',
                 })
                 .select()
                 .single();
@@ -153,7 +171,7 @@ const CourseDetailPage = () => {
                     order_id: order.id,
                     item_type: 'course',
                     item_id: course.id,
-                    price: finalPrice // Actual price paid after discount
+                    price: finalPrice
                 });
 
             if (itemError) throw itemError;
@@ -174,8 +192,9 @@ const CourseDetailPage = () => {
             navigate(`/learn/${course.id}`);
 
         } catch (error: any) {
-            console.error('Enrollment Failed:', error);
-            alert('Failed to enroll: ' + error.message);
+            console.error('Enrollment/Payment Failed:', error);
+            // alert('Failed to enroll: ' + error.message);
+            // Don't alert if user just closed the popup
         }
         setEnrolling(false);
     };
@@ -231,11 +250,11 @@ const CourseDetailPage = () => {
                                         Enroll Now for
                                         {discount ? (
                                             <>
-                                                <span className="line-through opacity-50 mx-2">${course.price}</span>
-                                                ${finalPrice.toFixed(2)}
+                                                <span className="line-through opacity-50 mx-2">₹{course.price}</span>
+                                                ₹{finalPrice.toFixed(2)}
                                             </>
                                         ) : (
-                                            ` $${course.price}`
+                                            ` ₹${course.price}`
                                         )}
                                     </span>
                                 )}

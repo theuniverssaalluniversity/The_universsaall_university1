@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Download, Printer, Search } from 'lucide-react';
+import { Search, Download, Printer } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 const AdminStudentDetails = () => {
     const [students, setStudents] = useState<any[]>([]);
@@ -31,26 +32,55 @@ const AdminStudentDetails = () => {
         setLoading(false);
     };
 
-    const handleExportCSV = () => {
+    const handleExportCSV = async () => {
         const headers = ["Unique ID", "Full Name", "Email", "Phone", "Address", "Joined Date"];
         const csvContent = [
             headers.join(','),
             ...students.map(s => [
                 s.unique_id || 'N/A',
-                `"${s.full_name || ''}"`,
+                `\"${s.full_name || ''}\"`,
                 s.email,
                 s.phone_number || '',
-                `"${s.address_line1 || ''}"`,
+                `\"${s.address_line1 || ''}\"`,
                 new Date(s.created_at).toLocaleDateString()
             ].join(','))
         ].join('\n');
 
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `student_details_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
+        try {
+            if (Capacitor.isNativePlatform()) {
+                const fileName = `student_details_${new Date().toISOString().split('T')[0]}.csv`;
+                const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+                const { Share } = await import('@capacitor/share');
+
+                // Write file to Cache directory
+                const result = await Filesystem.writeFile({
+                    path: fileName,
+                    data: csvContent,
+                    directory: Directory.Cache,
+                    encoding: Encoding.UTF8
+                });
+
+                // Share the file
+                await Share.share({
+                    title: 'Export Student Details',
+                    text: 'Here is the student details CSV export.',
+                    url: result.uri,
+                    dialogTitle: 'Share CSV'
+                });
+
+            } else {
+                // Web Fallback
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `student_details_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed due to platform restrictions.');
+        }
     };
 
     const handlePrint = () => {
@@ -92,7 +122,7 @@ const AdminStudentDetails = () => {
             {/* Table */}
             <div className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-zinc-400">
+                    <table className="w-full text-left text-sm text-zinc-400 min-w-[1000px]">
                         <thead className="bg-zinc-800/50 text-white uppercase font-medium">
                             <tr>
                                 <th className="px-6 py-4">Unique ID</th>

@@ -7,6 +7,7 @@ interface AuthContextType {
     session: Session | null;
     user: User | null;
     role: UserRole | null;
+    uniqueId?: string | null;
     loading: boolean;
     isAdmin: boolean;
     isInstructor: boolean;
@@ -114,19 +115,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
     }, []);
 
+    const [uniqueId, setUniqueId] = useState<string | null>(null);
+
     const fetchUserRole = async (userId: string) => {
         try {
             const { data, error } = await supabase
                 .from('users')
-                .select('role')
+                .select('role, unique_id')
                 .eq('id', userId)
                 .single();
 
             if (data) {
                 setRole(data.role);
+                setUniqueId(data.unique_id);
             } else if (error) {
                 console.error('Error fetching role:', error);
-                // Default to student if fetch fails (safe fallback)
                 setRole('student');
             }
         } catch (err) {
@@ -140,10 +143,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         session,
         user,
         role,
+        uniqueId,
         loading,
         isAdmin: role === 'admin',
         isInstructor: role === 'instructor',
-        isSupport: role === 'support' || role === 'admin' // Support often accessible by admin too
+        isSupport: role === 'support' || role === 'admin'
     };
 
     return (

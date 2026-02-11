@@ -97,7 +97,7 @@ const SupportDashboard = () => {
                                             <div className="text-sm text-zinc-500">{order.users?.email || 'No Email'}</div>
                                         </td>
                                         <td className="px-6 py-4 text-white font-medium">
-                                            ${order.total_amount || '0.00'}
+                                            ₹{order.total_amount || '0.00'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${order.status === 'completed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
