@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabase';
 import { useConfig } from '../../context/ConfigContext';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, AlertCircle, Eye, EyeOff, Phone, MapPin } from 'lucide-react';
 
 const RegisterPage = () => {
     const config = useConfig();
@@ -11,6 +11,8 @@ const RegisterPage = () => {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [address, setAddress] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,15 @@ const RegisterPage = () => {
             if (authError) throw authError;
 
             if (data.user) {
-                // Redirect to Login with success message or auto-login
-                // For now, let's redirect to login
+                // Update profile with optional phone and address immediately
+                if (phoneNumber || address) {
+                    await supabase.from('users').update({
+                        phone_number: phoneNumber,
+                        address_line1: address
+                    }).eq('id', data.user.id);
+                }
+
+                // Redirect to Login
                 navigate('/login');
             }
         } catch (err: any) {
@@ -130,6 +139,34 @@ const RegisterPage = () => {
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-400">Phone Number (Optional)</label>
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                                <input
+                                    type="tel"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-colors"
+                                    placeholder="+1 234 567 890"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-400">Default Address (Optional)</label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                                <input
+                                    type="text"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-colors"
+                                    placeholder="Street Address, City"
+                                />
                             </div>
                         </div>
 

@@ -18,6 +18,7 @@ const CheckoutPage = () => {
     const [addressMode, setAddressMode] = useState<'saved' | 'new'>('new');
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
     const [selectedAddressIndex, setSelectedAddressIndex] = useState<number>(-1);
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [newAddress, setNewAddress] = useState({
         line1: '',
         city: '',
@@ -42,6 +43,20 @@ const CheckoutPage = () => {
             // Pre-fill name if available
             if (user.user_metadata?.full_name) {
                 setBirthDetails(prev => ({ ...prev, name: user.user_metadata.full_name }));
+            }
+
+            // Fetch profile defaults
+            const { data: profile } = await supabase
+                .from('users')
+                .select('phone_number, address_line1')
+                .eq('id', user.id)
+                .single();
+
+            if (profile) {
+                if (profile.phone_number) setPhoneNumber(profile.phone_number);
+                if (profile.address_line1) {
+                    setNewAddress(prev => ({ ...prev, line1: profile.address_line1 }));
+                }
             }
 
             const { data: orders } = await supabase
@@ -79,12 +94,16 @@ const CheckoutPage = () => {
 
         try {
             // Validation
+            if (!phoneNumber) {
+                throw new Error("Phone Number is required.");
+            }
+
             let finalAddress = null;
             if (addressMode === 'new') {
                 if (!newAddress.line1 || !newAddress.city || !newAddress.zip) {
                     throw new Error("Please fill in all required address fields.");
                 }
-                finalAddress = newAddress;
+                finalAddress = { ...newAddress, phone: phoneNumber };
             } else {
                 if (selectedAddressIndex === -1 || !savedAddresses[selectedAddressIndex]) {
                     throw new Error("Please select a saved address or create a new one.");
@@ -132,7 +151,7 @@ const CheckoutPage = () => {
                 amount: total, // INR
                 currency: 'INR',
                 userEmail: user.email || '',
-                userPhone: newAddress.zip, // Placeholder
+                userPhone: phoneNumber,
                 userName: user.user_metadata?.full_name || 'Customer',
                 description: `Order #${order.id.slice(0, 8)}`,
                 metadata: {
@@ -198,6 +217,12 @@ const CheckoutPage = () => {
             } catch (emailErr) {
                 console.error("Failed to send email:", emailErr);
             }
+
+            // 8. Update permanent user profile tracking
+            await supabase.from('users').update({
+                phone_number: phoneNumber,
+                address_line1: finalAddress?.line1 || newAddress.line1
+            }).eq('id', user.id);
 
             clearCart();
             navigate('/success');
@@ -292,7 +317,19 @@ const CheckoutPage = () => {
                             </div>
                         </div>
 
-                        <h2 className="text-xl font-bold text-white mb-6">Shipping Details</h2>
+                        <h2 className="text-xl font-bold text-white mb-6">Contact & Shipping</h2>
+
+                        <div className="mb-6">
+                            <label className="text-xs text-zinc-400 mb-1 block">Phone Number <span className="text-red-500">*</span></label>
+                            <input
+                                type="tel"
+                                required
+                                value={phoneNumber}
+                                onChange={e => setPhoneNumber(e.target.value)}
+                                className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-primary/50 outline-none"
+                                placeholder="+1 234 567 890"
+                            />
+                        </div>
 
                         {savedAddresses.length > 0 && (
                             <div className="flex gap-2 mb-4">

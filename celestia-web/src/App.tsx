@@ -1,10 +1,11 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from './context/ConfigContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { CartProvider } from './context/CartContext';
 const PublicLayout = lazy(() => import('./layouts/PublicLayout'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+
 const CoursesPage = lazy(() => import('./pages/CoursesPage'));
 const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -53,6 +54,7 @@ const SuccessPage = lazy(() => import('./pages/SuccessPage'));
 import { AuthProvider } from './context/AuthContext';
 
 import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 import { AppBootstrap } from './components/auth/AppBootstrap';
 import ScrollToTop from './components/layout/ScrollToTop';
@@ -90,7 +92,7 @@ function App() {
                   <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-black text-white">Loading App...</div>}>
                     <Routes>
                       <Route element={<PublicLayout />}>
-                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/" element={Capacitor.isNativePlatform() ? <Navigate to="/login" replace /> : <LandingPage />} />
                         <Route path="/success" element={<SuccessPage />} />
                         <Route path="/courses" element={<CoursesPage />} />
                         <Route path="/courses/:slug" element={<CourseDetailPage />} />
