@@ -14,6 +14,7 @@ interface Service {
     price_inr?: number;
     display_mode?: 'content' | 'redirect';
     redirect_url?: string;
+    thumbnail_url?: string;
 }
 
 interface Category {
@@ -125,37 +126,71 @@ const ServicesPage = ({ categorySlug: propSlug }: ServicesPageProps) => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.1 }}
-                                className="bg-zinc-900 border border-white/5 rounded-2xl p-8 hover:border-primary/30 transition-all group flex flex-col"
+                                className={`bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all group flex flex-col ${category.slug !== 'blog' ? 'p-8' : ''}`}
                             >
-                                <h3 className="text-2xl font-serif text-white mb-3 group-hover:text-primary transition-colors">
-                                    {service.title}
-                                </h3>
-                                <p className="text-zinc-400 mb-8 flex-1 leading-relaxed">
-                                    {service.description}
-                                </p>
+                                {category.slug === 'blog' ? (
+                                    <>
+                                        {/* Blog Card Layout */}
+                                        {service.thumbnail_url ? (
+                                            <div className="aspect-[16/9] w-full overflow-hidden bg-zinc-800">
+                                                <img src={service.thumbnail_url} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            </div>
+                                        ) : (
+                                            <div className="aspect-[16/9] w-full bg-zinc-800 flex items-center justify-center text-zinc-600">
+                                                No Image
+                                            </div>
+                                        )}
+                                        <div className="p-8 flex flex-col flex-1">
+                                            <h3 className="text-2xl font-serif text-white mb-3 group-hover:text-primary transition-colors">
+                                                {service.title}
+                                            </h3>
+                                            <p className="text-zinc-400 mb-8 flex-1 leading-relaxed line-clamp-3">
+                                                {service.description}
+                                            </p>
+                                            <div className="mt-auto">
+                                                <button
+                                                    onClick={() => navigate(`/services/book/${service.id}`)}
+                                                    className="w-full py-3 bg-white/5 border border-white/10 text-white rounded-lg font-medium hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    Read More <ArrowRight size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Original Service Card Layout */}
+                                        <h3 className="text-2xl font-serif text-white mb-3 group-hover:text-primary transition-colors">
+                                            {service.title}
+                                        </h3>
+                                        <p className="text-zinc-400 mb-8 flex-1 leading-relaxed">
+                                            {service.description}
+                                        </p>
 
-                                <div className="flex items-center gap-6 text-sm text-zinc-500 mb-8">
-                                    <div className="flex items-center gap-2">
-                                        <Clock size={16} />
-                                        <span>{service.duration_minutes} mins</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {service.display_mode === 'redirect' ? <ExternalLink size={16} /> : <Calendar size={16} />}
-                                        <span>{service.display_mode === 'redirect' ? 'External' : 'Book Now'}</span>
-                                    </div>
-                                </div>
+                                        <div className="flex items-center gap-6 text-sm text-zinc-500 mb-8">
+                                            <div className="flex items-center gap-2">
+                                                <Clock size={16} />
+                                                <span>{service.duration_minutes} mins</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {service.display_mode === 'redirect' ? <ExternalLink size={16} /> : <Calendar size={16} />}
+                                                <span>{service.display_mode === 'redirect' ? 'External' : 'Book Now'}</span>
+                                            </div>
+                                        </div>
 
-                                <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                                    <span className="text-2xl font-medium text-white">
-                                        {formatPrice(service.price, service.price_inr)}
-                                    </span>
-                                    <button
-                                        onClick={() => handleBook(service)}
-                                        className="px-6 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-primary hover:text-black transition-colors flex items-center gap-2"
-                                    >
-                                        Book <ArrowRight size={18} />
-                                    </button>
-                                </div>
+                                        <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
+                                            <span className="text-2xl font-medium text-white">
+                                                {formatPrice(service.price, service.price_inr)}
+                                            </span>
+                                            <button
+                                                onClick={() => handleBook(service)}
+                                                className="px-6 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-primary hover:text-black transition-colors flex items-center gap-2"
+                                            >
+                                                Book <ArrowRight size={18} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </motion.div>
                         ))}
                     </div>

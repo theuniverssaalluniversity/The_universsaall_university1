@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { ArrowLeft, Clock, Sparkles, ShieldCheck, User } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 const ServiceDetailPage = () => {
     const { serviceId } = useParams();
@@ -66,8 +67,14 @@ const ServiceDetailPage = () => {
         </div>
     );
 
+    const isBlog = service.service_categories?.slug === 'blog';
+
     return (
         <div className="min-h-screen bg-background text-white pt-24 pb-20">
+            <Helmet>
+                <title>{service.title} | {isBlog ? 'Blog' : 'Services'}</title>
+                <meta name="description" content={service.description?.substring(0, 160) || service.title} />
+            </Helmet>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Back Link */}
                 <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-8 transition-colors group">
@@ -75,6 +82,23 @@ const ServiceDetailPage = () => {
                     Back (Services)
                 </button>
 
+                {isBlog ? (
+                    <div className="max-w-3xl mx-auto mt-4 px-4 sm:px-0">
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+                            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-white mb-8 leading-tight">{service.title}</h1>
+                            {service.thumbnail_url && (
+                                <div className="aspect-[21/9] bg-zinc-900 rounded-3xl overflow-hidden border border-white/5 relative mb-12 shadow-2xl">
+                                     <img src={service.thumbnail_url} alt={service.title} className="w-full h-full object-cover" />
+                                </div>
+                            )}
+                            <div className="text-lg text-zinc-300 leading-relaxed text-left space-y-6 max-w-[85ch]">
+                                {service.description?.split('\n').map((para: string, idx: number) => (
+                                     para.trim() ? <p key={idx}>{para}</p> : null
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
                     {/* Left: Image */}
                     <div className="space-y-6">
@@ -158,6 +182,7 @@ const ServiceDetailPage = () => {
                         </div>
                     </motion.div>
                 </div>
+                )}
             </div>
         </div>
     );

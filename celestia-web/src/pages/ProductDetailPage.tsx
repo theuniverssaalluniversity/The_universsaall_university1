@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { ArrowLeft, ShoppingBag, Check, Package, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 const ProductDetailPage = () => {
     const { slug } = useParams();
@@ -61,6 +62,10 @@ const ProductDetailPage = () => {
 
     return (
         <div className="min-h-screen bg-background text-white pt-24 pb-20">
+            <Helmet>
+                <title>{product.title} | Shop</title>
+                <meta name="description" content={product.description?.substring(0, 160) || `Buy ${product.title} today.`} />
+            </Helmet>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Back Link */}
                 <Link to="/shop" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-8 transition-colors group">

@@ -4,6 +4,7 @@ import { supabase } from '../utils/supabase';
 import { Clock, Users, Star, PlayCircle, Lock } from 'lucide-react';
 import { PaymentService } from '../services/payment/PaymentService';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 interface CourseDetail {
     id: string;
@@ -209,6 +210,10 @@ const CourseDetailPage = () => {
 
     return (
         <div className="min-h-screen pb-20">
+            <Helmet>
+                <title>{course.title} | Astrology Courses</title>
+                <meta name="description" content={course.description.substring(0, 160)} />
+            </Helmet>
             {/* Hero Header */}
             <div className="relative h-[50vh] flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0">

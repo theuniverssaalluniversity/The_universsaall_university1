@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.universsaall.university',
   appName: 'The Universsaall University',
   webDir: 'dist',
+  server: {
+    url: 'https://theuniverssaalluniversity.in',
+    cleartext: true
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,

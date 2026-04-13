@@ -58,6 +58,7 @@ import { Capacitor } from '@capacitor/core';
 
 import { AppBootstrap } from './components/auth/AppBootstrap';
 import ScrollToTop from './components/layout/ScrollToTop';
+import { HelmetProvider } from 'react-helmet-async';
 
 function App() {
   // Mobile Back Button Handling
@@ -81,8 +82,9 @@ function App() {
   }, []);
 
   return (
-    <AppBootstrap>
-      <ConfigProvider>
+    <HelmetProvider>
+      <AppBootstrap>
+        <ConfigProvider>
         <AuthProvider>
           <CurrencyProvider>
             <CartProvider>
@@ -192,6 +194,7 @@ function App() {
         </AuthProvider>
       </ConfigProvider>
     </AppBootstrap >
+    </HelmetProvider>
   );
 }
 
